@@ -1,0 +1,55 @@
+---
+title: "Untitled"
+output: html_document
+---
+
+```{r umap }
+
+
+rm(list = ls())
+library(umap)
+source("common.R")
+df<-read.csv("matrix/serum_protein_matrix_20200518.csv")
+df1<-data.frame(df[,c(8,9:ncol(df))])
+a<-ncol(df1)
+
+df2<-data.frame(apply(df1[,],2,function(X) sum(is.na(X)/90)))
+
+names(df2)<-("NAratio")
+
+df3<-data.frame(df1[,-(which(df2$NAratio>0.8))])
+
+names(df3)<-c("label",names(df3[,-1]))
+
+color<-c("firebrick1","forestgreen","dodgerblue","navyblue","red","green")
+set.seed(2020)
+pdf("QC/serum_batcheffect.pdf")
+
+drawUMAP(df3,color,strTitle = "UMAP",F,T)
+
+########
+
+
+rm(list = ls())
+library(umap)
+source("common.R")
+df<-read.csv("matrix/urine_protein_matrix_20200506.csv")
+df1<-data.frame(df[,c(8,9:ncol(df))])
+a<-ncol(df1)
+
+df2<-data.frame(apply(df1[,],2,function(X) sum(is.na(X)/90)))
+
+names(df2)<-("NAratio")
+
+df3<-data.frame(df1[,-(which(df2$NAratio>0.8))])
+
+names(df3)<-c("label",names(df3[,-1]))
+
+color<-c("firebrick1","forestgreen","dodgerblue","navyblue","red","green")
+set.seed(2020)
+pdf("QC/urine_batcheffect.pdf")
+
+drawUMAP(df3,color,strTitle = "UMAP",F,T)
+
+
+```

@@ -1,0 +1,158 @@
+---
+title: "Untitled"
+output: html_document
+---
+```{r complex urine}
+rm(list=ls())
+library(dplyr)
+
+promart <- read.csv("urine_protein_matrix_20200506.csv", stringsAsFactors = F)
+protein_n <- read.csv("urine_protein_matrix_protein_name.csv", stringsAsFactors = F)
+complex_table <- read.csv("allComplexes_human.csv", stringsAsFactors = F)
+
+####### find complex #############
+df_complex <- vector()
+for(i in 1:nrow(protein_n)){
+  protSel <- protein_n$Uniport_ID[i]
+  selInd <- vector()
+  for(j in 1:length(complex_table)){
+    # protMat_deSel<-protMat_de[ which(grepl(protSel[i],row.names(protMat_de))),]
+    selInd<-c(selInd,which(grepl(protSel[j],complex_table$subunits.UniProt.IDs.)))
+  }
+  if (length(selInd) > 0){
+    complex_table_deSel <- complex_table[selInd,]
+    df_complex <- rbind(df_complex, complex_table_deSel)
+    print(i)
+  }
+  }
+df_complex <- distinct(df_complex)
+
+######## calculate ratio ########
+protRatioNames<-vector();m=1
+for(i in 1:nrow(df_complex)){
+  prot_sp <- unlist(strsplit(df_complex$subunits.UniProt.IDs.[i],";"))
+  if (length(prot_sp) > 1) {
+  comb<-combn(1:length(prot_sp),2)
+  for(j in 1:ncol(comb))  {
+    protRatioNames[m]<-paste(prot_sp[comb[,j]],collapse = "/")
+    m<-m+1
+    }
+  }
+  print(i)
+}
+protRatioNames <- unique(protRatioNames)
+
+row.names(promart) <- promart$ID
+promart_ma <- promart[,-1:-8]
+promart_ma_t <- data.frame(t(promart_ma))
+promart_ma_tNoNA<-promart_ma_t
+promart_ma_tNoNA[promart_ma_tNoNA==0]<-NA
+promart_ma_tNoNA[is.na(promart_ma_tNoNA)]<-min(promart_ma_tNoNA, na.rm=T)
+
+protRatioMat<-data.frame(matrix(0,nrow=length(protRatioNames),ncol=ncol(promart_ma_tNoNA)))
+row.names(protRatioMat)<-protRatioNames
+colnames(protRatioMat)<-colnames(promart_ma_tNoNA)
+protRatioMat_1 <- vector()
+for(i in 1:nrow(protRatioMat)){
+  selProt<-unlist(strsplit(row.names(protRatioMat)[i],"/"))
+  selInd<-vector()
+  for(m in 1:length(selProt)){
+    # protMat_deSel<-protMat_de[ which(grepl(protSel[i],row.names(protMat_de))),]
+    selInd<-c(selInd,which(grepl(selProt[m],row.names(promart_ma_tNoNA))))
+  }
+  protRatioMat_deSel <- promart_ma_tNoNA[selInd,] 
+  protMat_deSel_2_fi <- log2(protRatioMat_deSel[1,])-log2(protRatioMat_deSel[2,])
+  protRatioMat_1[i]<-paste(protMat_deSel_2_fi,collapse = ";") #sum by row
+  print(i)
+}
+
+
+for(i in 11779:nrow(protRatioMat)){
+  protRatioMat[i,]<-unlist(strsplit(protRatioMat_1[i],";"))
+  print(i)
+  
+}
+write.csv(protRatioMat,"protRatioMat.csv",row.names = T)
+
+protRatioMatSel<-protRatioMat[apply((protRatioMat)=="NA",1,sum)!=ncol(protRatioMat),]
+write.csv(protRatioMatSel,"protRatioMatSel.csv",row.names = T)
+
+```
+
+
+```{r complex serum}
+
+rm(list=ls())
+library(dplyr)
+promart <- read.csv("serum_protein_matrix_20200518.csv", stringsAsFactors = F)
+protein_n <- read.csv("serum_protein_matrix_protein_name.csv", stringsAsFactors = F)
+complex_table <- read.csv("allComplexes_human.csv", stringsAsFactors = F)
+
+####### find complex #############
+df_complex <- vector()
+for(i in 1:nrow(protein_n)){
+  protSel <- protein_n$Uniport_ID[i]
+  selInd <- vector()
+  for(j in 1:length(complex_table)){
+    # protMat_deSel<-protMat_de[ which(grepl(protSel[i],row.names(protMat_de))),]
+    selInd<-c(selInd,which(grepl(protSel[j],complex_table$subunits.UniProt.IDs.)))
+  }
+  if (length(selInd) > 0){
+    complex_table_deSel <- complex_table[selInd,]
+    df_complex <- rbind(df_complex, complex_table_deSel)
+    print(i)
+  }
+  }
+df_complex <- distinct(df_complex)
+
+######## calculate ratio ########
+protRatioNames<-vector();m=1
+for(i in 1:nrow(df_complex)){
+  prot_sp <- unlist(strsplit(df_complex$subunits.UniProt.IDs.[i],";"))
+  if (length(prot_sp) > 1) {
+  comb<-combn(1:length(prot_sp),2)
+  for(j in 1:ncol(comb))  {
+    protRatioNames[m]<-paste(prot_sp[comb[,j]],collapse = "/")
+    m<-m+1
+    }
+  }
+  print(i)
+}
+protRatioNames <- unique(protRatioNames)
+
+row.names(promart) <- promart$ID
+promart_ma <- promart[,-1:-8]
+promart_ma_t <- data.frame(t(promart_ma))
+promart_ma_tNoNA<-promart_ma_t
+promart_ma_tNoNA[promart_ma_tNoNA==0]<-NA
+promart_ma_tNoNA[is.na(promart_ma_tNoNA)]<-min(promart_ma_tNoNA, na.rm=T)
+
+protRatioMat<-data.frame(matrix(0,nrow=length(protRatioNames),ncol=ncol(promart_ma_tNoNA)))
+row.names(protRatioMat)<-protRatioNames
+colnames(protRatioMat)<-colnames(promart_ma_tNoNA)
+protRatioMat_1 <- vector()
+for(i in 1:nrow(protRatioMat)){
+  selProt<-unlist(strsplit(row.names(protRatioMat)[i],"/"))
+  selInd<-vector()
+  for(m in 1:length(selProt)){
+    # protMat_deSel<-protMat_de[ which(grepl(protSel[i],row.names(protMat_de))),]
+    selInd<-c(selInd,which(grepl(selProt[m],row.names(promart_ma_tNoNA))))
+  }
+  protRatioMat_deSel <- promart_ma_tNoNA[selInd,] 
+  protMat_deSel_2_fi <- log2(protRatioMat_deSel[1,])-log2(protRatioMat_deSel[2,])
+  protRatioMat_1[i]<-paste(protMat_deSel_2_fi,collapse = ";") #sum by row
+  print(i)
+}
+
+
+for(i in 1:nrow(protRatioMat)){
+  protRatioMat[i,]<-unlist(strsplit(protRatioMat_1[i],";"))
+  print(i)
+  
+}
+write.csv(protRatioMat,"serum_protRatioMat.csv",row.names = T)
+
+protRatioMatSel<-protRatioMat[apply((protRatioMat)=="NA",1,sum)!=ncol(protRatioMat),]
+write.csv(protRatioMatSel,"serum_protRatioMatSel.csv",row.names = T)
+
+```

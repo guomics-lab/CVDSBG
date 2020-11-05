@@ -1,0 +1,889 @@
+---
+title: "Untitled"
+output: html_document
+---
+
+```{r volcanoplot_raw_serum}
+#non_covid&healthy
+rm(list=ls())
+
+library(umap)
+library(RColorBrewer)
+source("common.R")
+
+raw<-read.csv("matrix/serum_protein_matrix_20200518.csv")
+
+cytokine<-read.csv("matrix/protID_serum.csv")
+
+cyto<-cytokine[which(cytokine$Cytokine=="yes"),]
+
+
+cyto2<-c(as.matrix(cyto$all))
+
+
+df1<-data.frame(raw[,c(5,9:ncol(raw))])
+
+a<-ncol(df1)
+
+df2<-data.frame(apply(df1[,],2,function(X) sum(is.na(X)/90)))
+
+names(df2)<-("NAratio")
+
+df3<-data.frame(df1[,-(which(df2$NAratio>0.8))])
+
+df4<-data.frame(df3[order(df3$DiseaseType),])
+
+vol<-data.frame(t(df4[,-1]))
+######volcanno
+
+vol[is.na(vol)]<-0
+
+df<-vol
+
+
+#求fd
+df$fd <- apply(df,1, function(x) log2((mean(na.omit(x[24:40]))/mean(na.omit(x[1:23])))))
+#求p_value
+
+x<-c(0.0,0.0)
+#把na值填充为
+
+#df是蛋白质矩阵数据（P1、P2……）
+for(i in 1:nrow(df)){
+    x[i] <- t.test(df[i,24:40],df[i,1:23], paired = F, var.equal = F)$p.value
+}
+df$P_value<-x
+df$P_value_adjust<-p.adjust(df$P_value, method="BH")
+#此时的p_value 已经经过校正
+
+path<-paste("volcanoplot/serum/non_covid&healthy.pdf")
+pdf(path)
+plot(df$fd, -log10(df$P_value_adjust), col="#00000033", pch=8,
+      xlab=paste("log2(fold change)"),
+      ylab="-log10 p value adjust",
+     main="non_covid&healthy")
+# 上调下调的蛋白，主要是靠subset函数从主数据集中取子集
+up <- subset(df, df$P_value_adjust< 0.05 & df$fd > 0.25)
+up2<-data.frame(row.names(up),up)
+
+upCyto<-up2[which(up2$row.names.up.%in%cyto2),-1]
+
+down <- subset(df, df$P_value_adjust< 0.05 & df$fd< -0.25)
+
+down2<-data.frame(row.names(down),down)
+downCyto<-down2[which(down2$row.names.down.%in%cyto2),-1]
+
+
+
+write.csv(up,file = "volcanoplot/serum/non_covid&healthy-up.csv")
+write.csv(down,file = "volcanoplot/serum/non_covid&healthy-down.csv")
+  # 选了子集后，需要把子集里的点加在刚才画的图上，挑出来的蛋白可以用cex参数变大，默认为1
+points(up$fd, -log10(up$P_value_adjust), col="deepskyblue4", bg = brewer.pal(9, "YlOrRd")[6], pch=8, cex=0.8)
+points(down$fd, -log10(down$P_value_adjust), col ="deepskyblue4", bg = brewer.pal(11,"RdBu")[9], pch = 8,cex=0.8)
+
+
+points(upCyto$fd, -log10(upCyto$P_value_adjust), col="darkorange3", bg ="darkorange3", pch=16, cex=1.5)
+points(downCyto$fd, -log10(downCyto$P_value_adjust), col ="darkorange3", bg = "darkorange3", pch = 16,cex=1.5)
+
+upCyto<-na.omit(upCyto)
+downCyto<-na.omit(downCyto)
+# text(upCyto$fd, -log10(upCyto$P_value_adjust), labels = row.names(upCyto))
+
+# text(downCyto$fd, -log10(downCyto$P_value_adjust), labels = row.names(downCyto))
+
+
+  #加辅助线，把p<0.05、fd2倍的区间标示。下面选取的数值与log2(2),-log10(0.05)对应
+abline(h=1.3,v=c(-0.25,0.25),lty=2,lwd=1)
+#标示出特定的蛋白（如上面的up/down，或者其他特定的蛋白），可以用text函数
+#if(length(up[,1])>0){
+  #text(up$fd, -log10(up$P_value), row.names(up), pos=1, col="purple", cex = 0.7,adj=NULL)
+#}
+#if(length(down[,1])>0){
+  #text(down$fd, -log10(down$P_value), row.names(down), pos=1, col="red",cex= 0.7,adj=NULL)
+#}
+
+dev.off()
+
+
+
+
+ # covid&healthy}
+
+rm(list=ls())
+
+library(umap)
+library(RColorBrewer)
+source("common.R")
+
+raw<-read.csv("matrix/serum_protein_matrix_20200518.csv")
+cytokine<-read.csv("matrix/protID_serum.csv")
+
+cyto<-cytokine[which(cytokine$Cytokine=="yes"),]
+
+
+cyto2<-c(as.matrix(cyto$all))
+
+df1<-data.frame(raw[,c(5,9:ncol(raw))])
+
+a<-ncol(df1)
+
+df2<-data.frame(apply(df1[,],2,function(X) sum(is.na(X)/90)))
+
+names(df2)<-("NAratio")
+
+df3<-data.frame(df1[,-(which(df2$NAratio>0.8))])
+
+df4<-data.frame(df3[order(df3$DiseaseType),])
+
+
+vol<-data.frame(t(df4[,-1]))
+
+
+######volcanno
+
+
+vol[is.na(vol)]<-0
+
+df<-vol
+
+
+#求fd
+df$fd <- apply(df,1, function(x) log2((mean(na.omit(x[41:90]))/mean(na.omit(x[1:23])))))
+#求p_value
+
+x<-c(0.0,0.0)
+#把na值填充为
+
+#df是蛋白质矩阵数据（P1、P2……）
+for(i in 1:nrow(df)){
+    x[i] <- t.test(df[i,41:90],df[i,1:23], paired = F, var.equal = F)$p.value
+}
+df$P_value<-x
+df$P_value_adjust<-p.adjust(df$P_value, method="BH")
+#此时的p_value 已经经过校正
+
+path<-paste("volcanoplot/serum/covid&healthy.pdf")
+pdf(path)
+plot(df$fd, -log10(df$P_value_adjust), col="#00000033", pch=8,
+      xlab=paste("log2(fold change)"),
+      ylab="-log10 p value adjust",
+     main="covid&healthy")
+# 上调下调的蛋白，主要是靠subset函数从主数据集中取子集
+up <- subset(df, df$P_value_adjust< 0.05 & df$fd > 0.25)
+up2<-data.frame(row.names(up),up)
+
+upCyto<-up2[which(up2$row.names.up.%in%cyto2),-1]
+
+down <- subset(df, df$P_value_adjust< 0.05 & df$fd< -0.25)
+
+down2<-data.frame(row.names(down),down)
+downCyto<-down2[which(down2$row.names.down.%in%cyto2),-1]
+
+
+
+write.csv(up,file = "volcanoplot/serum/covid&healthy-up.csv")
+write.csv(down,file = "volcanoplot/serum/covid&healthy-down.csv")
+  # 选了子集后，需要把子集里的点加在刚才画的图上，挑出来的蛋白可以用cex参数变大，默认为1
+points(up$fd, -log10(up$P_value_adjust), col="deepskyblue4", bg = brewer.pal(9, "YlOrRd")[6], pch=8, cex=0.8)
+points(down$fd, -log10(down$P_value_adjust), col ="deepskyblue4", bg = brewer.pal(11,"RdBu")[9], pch = 8,cex=0.8)
+
+
+points(upCyto$fd, -log10(upCyto$P_value_adjust), col="darkorange3", bg ="darkorange3", pch=16, cex=1.5)
+points(downCyto$fd, -log10(downCyto$P_value_adjust), col ="darkorange3", bg = "darkorange3", pch = 16,cex=1.5)
+
+upCyto<-na.omit(upCyto)
+downCyto<-na.omit(downCyto)
+# text(upCyto$fd, -log10(upCyto$P_value_adjust), labels = row.names(upCyto))
+
+# text(downCyto$fd, -log10(downCyto$P_value_adjust), labels = row.names(downCyto))
+
+
+  #加辅助线，把p<0.05、fd2倍的区间标示。下面选取的数值与log2(2),-log10(0.05)对应
+abline(h=1.3,v=c(-0.25,0.25),lty=2,lwd=1)
+#标示出特定的蛋白（如上面的up/down，或者其他特定的蛋白），可以用text函数
+#if(length(up[,1])>0){
+  #text(up$fd, -log10(up$P_value), row.names(up), pos=1, col="purple", cex = 0.7,adj=NULL)
+#}
+#if(length(down[,1])>0){
+  #text(down$fd, -log10(down$P_value), row.names(down), pos=1, col="red",cex= 0.7,adj=NULL)
+#}
+
+dev.off()
+
+
+
+#severe&non_severe}
+
+rm(list=ls())
+cytokine<-read.csv("matrix/protID_serum.csv")
+
+cyto<-cytokine[which(cytokine$Cytokine=="yes"),]
+
+
+cyto2<-c(as.matrix(cyto$all))
+library(umap)
+library(RColorBrewer)
+source("common.R")
+
+raw<-read.csv("matrix/serum_protein_matrix_20200518.csv")
+
+df1<-data.frame(raw[,c(5,9:ncol(raw))])
+
+a<-ncol(df1)
+
+df2<-data.frame(apply(df1[,],2,function(X) sum(is.na(X)/90)))
+
+names(df2)<-("NAratio")
+
+df3<-data.frame(df1[,-(which(df2$NAratio>0.8))])
+
+df4<-data.frame(df3[order(df3$DiseaseType),])
+
+
+vol<-data.frame(t(df4[,-1]))
+
+
+######volcanno
+
+
+vol[is.na(vol)]<-0
+
+df<-vol
+
+
+#求fd
+df$fd <- apply(df,1, function(x) log2((mean(na.omit(x[80:90]))/mean(na.omit(x[41:79])))))
+#求p_value
+
+x<-c(0.0,0.0)
+#把na值填充为
+
+#df是蛋白质矩阵数据（P1、P2……）
+for(i in 1:nrow(df)){
+    x[i] <- t.test(df[i,80:90],df[i,41:79], paired = F, var.equal = F)$p.value
+}
+df$P_value<-x
+df$P_value_adjust<-p.adjust(df$P_value, method="BH")
+#此时的p_value 已经经过校正
+
+path<-paste("volcanoplot/serum/severe&non_severe.pdf")
+pdf(path)
+plot(df$fd, -log10(df$P_value_adjust), col="#00000033", pch=8,
+      xlab=paste("log2(fold change)"),
+      ylab="-log10 p value adjust",
+     main="severe&non_severe")
+# 上调下调的蛋白，主要是靠subset函数从主数据集中取子集
+up <- subset(df, df$P_value_adjust< 0.05 & df$fd > 0.25)
+up2<-data.frame(row.names(up),up)
+
+upCyto<-up2[which(up2$row.names.up.%in%cyto2),-1]
+
+down <- subset(df, df$P_value_adjust< 0.05 & df$fd< -0.25)
+
+down2<-data.frame(row.names(down),down)
+downCyto<-down2[which(down2$row.names.down.%in%cyto2),-1]
+
+
+
+write.csv(up,file = "volcanoplot/serum/severe&non_severe-up.csv")
+write.csv(down,file = "volcanoplot/serum/severe&non_severe-down.csv")
+  # 选了子集后，需要把子集里的点加在刚才画的图上，挑出来的蛋白可以用cex参数变大，默认为1
+points(up$fd, -log10(up$P_value_adjust), col="deepskyblue4", bg = brewer.pal(9, "YlOrRd")[6], pch=8, cex=0.8)
+points(down$fd, -log10(down$P_value_adjust), col ="deepskyblue4", bg = brewer.pal(11,"RdBu")[9], pch = 8,cex=0.8)
+
+
+points(upCyto$fd, -log10(upCyto$P_value_adjust), col="darkorange3", bg ="darkorange3", pch=16, cex=1.5)
+points(downCyto$fd, -log10(downCyto$P_value_adjust), col ="darkorange3", bg = "darkorange3", pch = 16,cex=1.5)
+
+upCyto<-na.omit(upCyto)
+downCyto<-na.omit(downCyto)
+abline(h=1.3,v=c(-0.25,0.25),lty=2,lwd=1)
+dev.off()
+```
+
+```{r volcanoplot_raw_urine}
+#non_covid&healthy
+rm(list=ls())
+
+library(umap)
+library(RColorBrewer)
+source("common.R")
+
+raw<-read.csv("matrix/urine_protein_matrix_20200506.csv")
+
+cytokine<-read.csv("matrix/protID_urine.csv")
+
+cyto<-cytokine[which(cytokine$Cytokine=="yes"),]
+
+
+cyto2<-c(as.matrix(cyto$all))
+
+
+df1<-data.frame(raw[,c(5,9:ncol(raw))])
+
+a<-ncol(df1)
+
+df2<-data.frame(apply(df1[,],2,function(X) sum(is.na(X)/90)))
+
+names(df2)<-("NAratio")
+
+df3<-data.frame(df1[,-(which(df2$NAratio>0.8))])
+
+df4<-data.frame(df3[order(df3$DiseaseType),])
+
+
+vol<-data.frame(t(df4[,-1]))
+
+
+######volcanno
+
+
+vol[is.na(vol)]<-0
+
+df<-vol
+
+
+#求fd
+df$fd <- apply(df,1, function(x) log2((mean(na.omit(x[24:40]))/mean(na.omit(x[1:23])))))
+#求p_value
+
+x<-c(0.0,0.0)
+#把na值填充为
+
+#df是蛋白质矩阵数据（P1、P2……）
+for(i in 1:nrow(df)){
+    x[i] <- t.test(df[i,24:40],df[i,1:23], paired = F, var.equal = F)$p.value
+}
+df$P_value<-x
+df$P_value_adjust<-p.adjust(df$P_value, method="BH")
+#此时的p_value 已经经过校正
+
+path<-paste("volcanoplot/non_covid&healthy.pdf")
+pdf(path)
+plot(df$fd, -log10(df$P_value_adjust), col="#00000033", pch=8,
+      xlab=paste("log2(fold change)"),
+      ylab="-log10 p value adjust",
+     main="non_covid&healthy")
+# 上调下调的蛋白，主要是靠subset函数从主数据集中取子集
+up <- subset(df, df$P_value_adjust< 0.05 & df$fd > 0.25)
+up2<-data.frame(row.names(up),up)
+
+upCyto<-up2[which(up2$row.names.up.%in%cyto2),-1]
+
+down <- subset(df, df$P_value_adjust< 0.05 & df$fd< -0.25)
+
+down2<-data.frame(row.names(down),down)
+downCyto<-down2[which(down2$row.names.down.%in%cyto2),-1]
+
+
+
+write.csv(up,file = "volcanoplot/non_covid&healthy-up.csv")
+write.csv(down,file = "volcanoplot/non_covid&healthy-down.csv")
+  # 选了子集后，需要把子集里的点加在刚才画的图上，挑出来的蛋白可以用cex参数变大，默认为1
+points(up$fd, -log10(up$P_value_adjust), col="deepskyblue4", bg = brewer.pal(9, "YlOrRd")[6], pch=8, cex=0.8)
+points(down$fd, -log10(down$P_value_adjust), col ="deepskyblue4", bg = brewer.pal(11,"RdBu")[9], pch = 8,cex=0.8)
+
+
+points(upCyto$fd, -log10(upCyto$P_value_adjust), col="darkorange3", bg ="darkorange3", pch=16, cex=1.5)
+points(downCyto$fd, -log10(downCyto$P_value_adjust), col ="darkorange3", bg = "darkorange3", pch = 16,cex=1.5)
+
+upCyto<-na.omit(upCyto)
+downCyto<-na.omit(downCyto)
+# text(upCyto$fd, -log10(upCyto$P_value_adjust), labels = row.names(upCyto))
+
+# text(downCyto$fd, -log10(downCyto$P_value_adjust), labels = row.names(downCyto))
+
+
+  #加辅助线，把p<0.05、fd2倍的区间标示。下面选取的数值与log2(2),-log10(0.05)对应
+abline(h=1.3,v=c(-0.25,0.25),lty=2,lwd=1)
+#标示出特定的蛋白（如上面的up/down，或者其他特定的蛋白），可以用text函数
+#if(length(up[,1])>0){
+  #text(up$fd, -log10(up$P_value), row.names(up), pos=1, col="purple", cex = 0.7,adj=NULL)
+#}
+#if(length(down[,1])>0){
+  #text(down$fd, -log10(down$P_value), row.names(down), pos=1, col="red",cex= 0.7,adj=NULL)
+#}
+
+dev.off()
+
+
+
+
+
+
+ # nocovid&healthy}
+
+rm(list=ls())
+
+library(umap)
+library(RColorBrewer)
+source("common.R")
+
+raw<-read.csv("matrix/urine_protein_matrix_20200506.csv")
+cytokine<-read.csv("matrix/protID_urine.csv")
+
+cyto<-cytokine[which(cytokine$Cytokine=="yes"),]
+
+
+cyto2<-c(as.matrix(cyto$all))
+
+df1<-data.frame(raw[,c(5,9:ncol(raw))])
+
+a<-ncol(df1)
+
+df2<-data.frame(apply(df1[,],2,function(X) sum(is.na(X)/90)))
+
+names(df2)<-("NAratio")
+
+df3<-data.frame(df1[,-(which(df2$NAratio>0.8))])
+
+df4<-data.frame(df3[order(df3$DiseaseType),])
+
+
+vol<-data.frame(t(df4[,-1]))
+
+
+######volcanno
+
+
+vol[is.na(vol)]<-0
+
+df<-vol
+
+
+#求fd
+df$fd <- apply(df,1, function(x) log2((mean(na.omit(x[41:90]))/mean(na.omit(x[1:23])))))
+#求p_value
+
+x<-c(0.0,0.0)
+#把na值填充为
+
+#df是蛋白质矩阵数据（P1、P2……）
+for(i in 1:nrow(df)){
+    x[i] <- t.test(df[i,41:90],df[i,1:23], paired = F, var.equal = F)$p.value
+}
+df$P_value<-x
+df$P_value_adjust<-p.adjust(df$P_value, method="BH")
+#此时的p_value 已经经过校正
+
+
+
+df1<-df[which(row.names(df)=="P63000_RAC1"),]
+
+
+
+path<-paste("volcanoplot/covid&healthy.pdf")
+pdf(path)
+plot(df$fd, -log10(df$P_value_adjust), col="#00000033", pch=8,
+      xlab=paste("log2(fold change)"),
+      ylab="-log10 p value adjust",
+     main="covid&healthy")
+# 上调下调的蛋白，主要是靠subset函数从主数据集中取子集
+up <- subset(df, df$P_value_adjust< 0.05 & df$fd > 0.25)
+up2<-data.frame(row.names(up),up)
+
+upCyto<-up2[which(up2$row.names.up.%in%cyto2),-1]
+
+down <- subset(df, df$P_value_adjust< 0.05 & df$fd< -0.25)
+
+down2<-data.frame(row.names(down),down)
+downCyto<-down2[which(down2$row.names.down.%in%cyto2),-1]
+
+write.csv(df,file = "volcanoplot/covid&healthy.csv")
+
+write.csv(up,file = "volcanoplot/covid&healthy-up.csv")
+write.csv(down,file = "volcanoplot/covid&healthy-down.csv")
+  # 选了子集后，需要把子集里的点加在刚才画的图上，挑出来的蛋白可以用cex参数变大，默认为1
+points(up$fd, -log10(up$P_value_adjust), col="deepskyblue4", bg = brewer.pal(9, "YlOrRd")[6], pch=8, cex=0.8)
+points(down$fd, -log10(down$P_value_adjust), col ="deepskyblue4", bg = brewer.pal(11,"RdBu")[9], pch = 8,cex=0.8)
+
+
+points(upCyto$fd, -log10(upCyto$P_value_adjust), col="darkorange3", bg ="darkorange3", pch=16, cex=1.5)
+points(downCyto$fd, -log10(downCyto$P_value_adjust), col ="darkorange3", bg = "darkorange3", pch = 16,cex=1.5)
+
+upCyto<-na.omit(upCyto)
+downCyto<-na.omit(downCyto)
+# text(upCyto$fd, -log10(upCyto$P_value_adjust), labels = row.names(upCyto))
+
+# text(downCyto$fd, -log10(downCyto$P_value_adjust), labels = row.names(downCyto))
+
+
+  #加辅助线，把p<0.05、fd2倍的区间标示。下面选取的数值与log2(2),-log10(0.05)对应
+abline(h=1.3,v=c(-0.25,0.25),lty=2,lwd=1)
+#标示出特定的蛋白（如上面的up/down，或者其他特定的蛋白），可以用text函数
+#if(length(up[,1])>0){
+  #text(up$fd, -log10(up$P_value), row.names(up), pos=1, col="purple", cex = 0.7,adj=NULL)
+#}
+#if(length(down[,1])>0){
+  #text(down$fd, -log10(down$P_value), row.names(down), pos=1, col="red",cex= 0.7,adj=NULL)
+#}
+
+dev.off()
+
+
+#severe&non_severe}
+
+rm(list=ls())
+cytokine<-read.csv("matrix/protID_urine.csv")
+
+cyto<-cytokine[which(cytokine$Cytokine=="yes"),]
+
+
+cyto2<-c(as.matrix(cyto$all))
+library(umap)
+library(RColorBrewer)
+source("common.R")
+
+raw<-read.csv("matrix/urine_protein_matrix_20200506.csv")
+
+df1<-data.frame(raw[,c(5,9:ncol(raw))])
+
+a<-ncol(df1)
+
+df2<-data.frame(apply(df1[,],2,function(X) sum(is.na(X)/90)))
+
+names(df2)<-("NAratio")
+
+df3<-data.frame(df1[,-(which(df2$NAratio>0.8))])
+
+df4<-data.frame(df3[order(df3$DiseaseType),])
+
+
+vol<-data.frame(t(df4[,-1]))
+
+
+######volcanno
+
+
+vol[is.na(vol)]<-0
+
+df<-vol
+
+
+#求fd
+df$fd <- apply(df,1, function(x) log2((mean(na.omit(x[80:90]))/mean(na.omit(x[41:79])))))
+#求p_value
+
+x<-c(0.0,0.0)
+#把na值填充为
+
+#df是蛋白质矩阵数据（P1、P2……）
+for(i in 1:nrow(df)){
+    x[i] <- t.test(df[i,80:90],df[i,41:79], paired = F, var.equal = F)$p.value
+}
+df$P_value<-x
+df$P_value_adjust<-p.adjust(df$P_value, method="BH")
+#此时的p_value 已经经过校正
+
+path<-paste("volcanoplot/severe&non_severe.pdf")
+pdf(path)
+plot(df$fd, -log10(df$P_value_adjust), col="#00000033", pch=8,
+      xlab=paste("log2(fold change)"),
+      ylab="-log10 p value adjust",
+     main="severe&non_severe")
+# 上调下调的蛋白，主要是靠subset函数从主数据集中取子集
+up <- subset(df, df$P_value_adjust< 0.05 & df$fd > 0.25)
+up2<-data.frame(row.names(up),up)
+
+upCyto<-up2[which(up2$row.names.up.%in%cyto2),-1]
+
+down <- subset(df, df$P_value_adjust< 0.05 & df$fd< -0.25)
+
+down2<-data.frame(row.names(down),down)
+downCyto<-down2[which(down2$row.names.down.%in%cyto2),-1]
+
+
+write.csv(df,file = "volcanoplot/severe&non_severe.csv")
+
+write.csv(up,file = "volcanoplot/severe&non_severe-up.csv")
+write.csv(down,file = "volcanoplot/severe&non_severe-down.csv")
+  # 选了子集后，需要把子集里的点加在刚才画的图上，挑出来的蛋白可以用cex参数变大，默认为1
+points(up$fd, -log10(up$P_value_adjust), col="deepskyblue4", bg = brewer.pal(9, "YlOrRd")[6], pch=8, cex=0.8)
+points(down$fd, -log10(down$P_value_adjust), col ="deepskyblue4", bg = brewer.pal(11,"RdBu")[9], pch = 8,cex=0.8)
+
+
+points(upCyto$fd, -log10(upCyto$P_value_adjust), col="darkorange3", bg ="darkorange3", pch=16, cex=1.5)
+points(downCyto$fd, -log10(downCyto$P_value_adjust), col ="darkorange3", bg = "darkorange3", pch = 16,cex=1.5)
+
+upCyto<-na.omit(upCyto)
+downCyto<-na.omit(downCyto)
+# text(upCyto$fd, -log10(upCyto$P_value_adjust), labels = row.names(upCyto))
+# 
+# text(downCyto$fd, -log10(downCyto$P_value_adjust), labels = row.names(downCyto))
+
+  #加辅助线，把p<0.05、fd2倍的区间标示。下面选取的数值与log2(2),-log10(0.05)对应
+abline(h=1.3,v=c(-0.25,0.25),lty=2,lwd=1)
+#标示出特定的蛋白（如上面的up/down，或者其他特定的蛋白），可以用text函数
+#if(length(up[,1])>0){
+  #text(up$fd, -log10(up$P_value), row.names(up), pos=1, col="purple", cex = 0.7,adj=NULL)
+#}
+#if(length(down[,1])>0){
+  #text(down$fd, -log10(down$P_value), row.names(down), pos=1, col="red",cex= 0.7,adj=NULL)
+#}
+
+dev.off()
+
+
+```
+
+```{r volcanoplot__metabo_normalized_by-cretinine} 
+
+rm(list=ls())
+
+library(umap)
+library(RColorBrewer)
+source("common.R")
+
+raw<-read.csv("matrix/urine_106metabo_matrix_normalized_metabo_creatinine_20200909.csv",check.names = F)
+raw<-raw[,-which(names(raw)=="creatinine")]
+cytokine<-read.csv("matrix/protID_urine.csv")
+
+cyto<-cytokine[which(cytokine$Cytokine=="yes"),]
+
+
+cyto2<-c(as.matrix(cyto$all))
+
+
+df1<-data.frame(raw[,c(2,3:ncol(raw))],check.names = F)
+
+a<-ncol(df1)
+
+df2<-data.frame(apply(df1[,],2,function(X) sum(is.na(X)/106)),check.names = F)
+
+names(df2)<-("NAratio")
+
+df3<-data.frame(df1[,-(which(df2$NAratio>0.8))],check.names = F)
+
+df4<-data.frame(df3[order(df3$DiseaseType),],check.names = F)
+vol<-data.frame(t(df4[,-1]))
+
+######volcanno
+vol[is.na(vol)]<-0
+
+df<-vol
+
+
+#求fd
+df$fd <- apply(df,1, function(x) log2((mean(na.omit(x[28:42]))/mean(na.omit(x[1:27])))))
+#求p_value
+
+x<-c(0.0,0.0)
+#把na值填充为
+
+#df是蛋白质矩阵数据（P1、P2……）
+for(i in 1:nrow(df)){
+    x[i] <- t.test(df[i,28:42],df[i,1:27], paired = F, var.equal = F)$p.value
+}
+df$P_value<-x
+df$P_value_adjust<-p.adjust(df$P_value, method="BH")
+#此时的p_value 已经经过校正
+
+path<-paste("volcanoplot/106metabo_normalized_by_metabo_creatinine/non_covid&healthy.pdf")
+pdf(path)
+plot(df$fd, -log10(df$P_value_adjust), col="#00000033", pch=8,
+      xlab=paste("log2(fold change)"),
+      ylab="-log10 p value adjust",
+     main="non_covid&healthy")
+# 上调下调的蛋白，主要是靠subset函数从主数据集中取子集
+up <- subset(df, df$P_value_adjust< 0.05 & df$fd > 0.25)
+up2<-data.frame(row.names(up),up)
+
+upCyto<-up2[which(up2$row.names.up.%in%cyto2),-1]
+
+down <- subset(df, df$P_value_adjust< 0.05 & df$fd< -0.25)
+
+down2<-data.frame(row.names(down),down)
+downCyto<-down2[which(down2$row.names.down.%in%cyto2),-1]
+
+
+
+write.csv(up,file = "volcanoplot/106metabo_normalized_by_metabo_creatinine/non_covid&healthy-up.csv")
+write.csv(down,file = "volcanoplot/106metabo_normalized_by_metabo_creatinine/non_covid&healthy-down.csv")
+  # 选了子集后，需要把子集里的点加在刚才画的图上，挑出来的蛋白可以用cex参数变大，默认为1
+points(up$fd, -log10(up$P_value_adjust), col="deepskyblue4", bg = brewer.pal(9, "YlOrRd")[6], pch=8, cex=0.8)
+points(down$fd, -log10(down$P_value_adjust), col ="deepskyblue4", bg = brewer.pal(11,"RdBu")[9], pch = 8,cex=0.8)
+
+
+points(upCyto$fd, -log10(upCyto$P_value_adjust), col="darkorange3", bg ="darkorange3", pch=16, cex=1.5)
+points(downCyto$fd, -log10(downCyto$P_value_adjust), col ="darkorange3", bg = "darkorange3", pch = 16,cex=1.5)
+
+upCyto<-na.omit(upCyto)
+downCyto<-na.omit(downCyto)
+abline(h=1.3,v=c(-0.25,0.25),lty=2,lwd=1)
+dev.off()
+
+
+#covid&healthy
+rm(list=ls())
+
+library(umap)
+library(RColorBrewer)
+source("common.R")
+
+raw<-read.csv("matrix/urine_106metabo_matrix_normalized_metabo_creatinine_20200909.csv",check.names = F)
+raw<-raw[,-which(names(raw)=="creatinine")]
+cytokine<-read.csv("matrix/protID_urine.csv")
+
+cyto<-cytokine[which(cytokine$Cytokine=="yes"),]
+
+
+cyto2<-c(as.matrix(cyto$all))
+
+
+df1<-data.frame(raw[,c(2,3:ncol(raw))],check.names = F)
+
+a<-ncol(df1)
+
+df2<-data.frame(apply(df1[,],2,function(X) sum(is.na(X)/106)),check.names = F)
+
+names(df2)<-("NAratio")
+
+df3<-data.frame(df1[,-(which(df2$NAratio>0.8))],check.names = F)
+
+df4<-data.frame(df3[order(df3$DiseaseType),],check.names = F)
+vol<-data.frame(t(df4[,-1]))
+
+######volcanno
+vol[is.na(vol)]<-0
+
+df<-vol
+
+
+#求fd
+df$fd <- apply(df,1, function(x) log2((mean(na.omit(x[43:106]))/mean(na.omit(x[1:27])))))
+#求p_value
+
+x<-c(0.0,0.0)
+#把na值填充为
+
+#df是蛋白质矩阵数据（P1、P2……）
+for(i in 1:nrow(df)){
+    x[i] <- t.test(df[i,43:106],df[i,1:27], paired = F, var.equal = F)$p.value
+}
+df$P_value<-x
+df$P_value_adjust<-p.adjust(df$P_value, method="BH")
+#此时的p_value 已经经过校正
+
+path<-paste("volcanoplot/106metabo_normalized_by_metabo_creatinine/covid&healthy.pdf")
+pdf(path)
+plot(df$fd, -log10(df$P_value_adjust), col="#00000033", pch=8,
+      xlab=paste("log2(fold change)"),
+      ylab="-log10 p value adjust",
+     main="non_covid&healthy")
+# 上调下调的蛋白，主要是靠subset函数从主数据集中取子集
+up <- subset(df, df$P_value_adjust< 0.05 & df$fd > 0.25)
+up2<-data.frame(row.names(up),up)
+
+upCyto<-up2[which(up2$row.names.up.%in%cyto2),-1]
+
+down <- subset(df, df$P_value_adjust< 0.05 & df$fd< -0.25)
+
+down2<-data.frame(row.names(down),down)
+downCyto<-down2[which(down2$row.names.down.%in%cyto2),-1]
+
+
+
+write.csv(up,file = "volcanoplot/106metabo_normalized_by_metabo_creatinine/covid&healthy-up.csv")
+write.csv(down,file = "volcanoplot/106metabo_normalized_by_metabo_creatinine/covid&healthy-down.csv")
+  # 选了子集后，需要把子集里的点加在刚才画的图上，挑出来的蛋白可以用cex参数变大，默认为1
+points(up$fd, -log10(up$P_value_adjust), col="deepskyblue4", bg = brewer.pal(9, "YlOrRd")[6], pch=8, cex=0.8)
+points(down$fd, -log10(down$P_value_adjust), col ="deepskyblue4", bg = brewer.pal(11,"RdBu")[9], pch = 8,cex=0.8)
+
+
+points(upCyto$fd, -log10(upCyto$P_value_adjust), col="darkorange3", bg ="darkorange3", pch=16, cex=1.5)
+points(downCyto$fd, -log10(downCyto$P_value_adjust), col ="darkorange3", bg = "darkorange3", pch = 16,cex=1.5)
+
+upCyto<-na.omit(upCyto)
+downCyto<-na.omit(downCyto)
+abline(h=1.3,v=c(-0.25,0.25),lty=2,lwd=1)
+dev.off()
+
+
+#severe&non_severe
+
+rm(list=ls())
+
+library(umap)
+library(RColorBrewer)
+source("common.R")
+
+raw<-read.csv("matrix/urine_106metabo_matrix_normalized_metabo_creatinine_20200909.csv",check.names = F)
+raw<-raw[,-which(names(raw)=="creatinine")]
+cytokine<-read.csv("matrix/protID_urine.csv")
+
+cyto<-cytokine[which(cytokine$Cytokine=="yes"),]
+
+
+cyto2<-c(as.matrix(cyto$all))
+
+
+df1<-data.frame(raw[,c(2,3:ncol(raw))],check.names = F)
+
+a<-ncol(df1)
+
+df2<-data.frame(apply(df1[,],2,function(X) sum(is.na(X)/106)),check.names = F)
+
+names(df2)<-("NAratio")
+
+df3<-data.frame(df1[,-(which(df2$NAratio>0.8))],check.names = F)
+
+df4<-data.frame(df3[order(df3$DiseaseType),],check.names = F)
+vol<-data.frame(t(df4[,-1]))
+
+######volcanno
+vol[is.na(vol)]<-0
+
+df<-vol
+
+
+#求fd
+df$fd <- apply(df,1, function(x) log2((mean(na.omit(x[87:106]))/mean(na.omit(x[43:86])))))
+#求p_value
+
+x<-c(0.0,0.0)
+#把na值填充为
+
+#df是蛋白质矩阵数据（P1、P2……）
+for(i in 1:nrow(df)){
+    x[i] <- t.test(df[i,87:106],df[i,43:86], paired = F, var.equal = F)$p.value
+}
+df$P_value<-x
+df$P_value_adjust<-p.adjust(df$P_value, method="BH")
+#此时的p_value 已经经过校正
+
+path<-paste("volcanoplot/106metabo_normalized_by_metabo_creatinine/severe&non_severe.pdf")
+pdf(path)
+plot(df$fd, -log10(df$P_value_adjust), col="#00000033", pch=8,
+      xlab=paste("log2(fold change)"),
+      ylab="-log10 p value adjust",
+     main="non_covid&healthy")
+# 上调下调的蛋白，主要是靠subset函数从主数据集中取子集
+up <- subset(df, df$P_value_adjust< 0.05 & df$fd > 0.25)
+up2<-data.frame(row.names(up),up)
+
+upCyto<-up2[which(up2$row.names.up.%in%cyto2),-1]
+
+down <- subset(df, df$P_value_adjust< 0.05 & df$fd< -0.25)
+
+down2<-data.frame(row.names(down),down)
+downCyto<-down2[which(down2$row.names.down.%in%cyto2),-1]
+
+
+
+write.csv(up,file = "volcanoplot/106metabo_normalized_by_metabo_creatinine/severe&non_severe-up.csv")
+write.csv(down,file = "volcanoplot/106metabo_normalized_by_metabo_creatinine/severe&non_severe-down.csv")
+  # 选了子集后，需要把子集里的点加在刚才画的图上，挑出来的蛋白可以用cex参数变大，默认为1
+points(up$fd, -log10(up$P_value_adjust), col="deepskyblue4", bg = brewer.pal(9, "YlOrRd")[6], pch=8, cex=0.8)
+points(down$fd, -log10(down$P_value_adjust), col ="deepskyblue4", bg = brewer.pal(11,"RdBu")[9], pch = 8,cex=0.8)
+
+
+points(upCyto$fd, -log10(upCyto$P_value_adjust), col="darkorange3", bg ="darkorange3", pch=16, cex=1.5)
+points(downCyto$fd, -log10(downCyto$P_value_adjust), col ="darkorange3", bg = "darkorange3", pch = 16,cex=1.5)
+
+upCyto<-na.omit(upCyto)
+downCyto<-na.omit(downCyto)
+abline(h=1.3,v=c(-0.25,0.25),lty=2,lwd=1)
+dev.off()
+
+```
+

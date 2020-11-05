@@ -1,0 +1,133 @@
+---
+title: "Untitled"
+output: html_document
+---
+
+
+```{r QC violinplot}
+
+rm(list=ls())
+library(readxl)
+library(stringr)
+info<-read.table("01_info/BatchDesignResult_urine_20200423.txt",sep = "\t",header = T)
+
+tmt<-read_excel("01_info/TMT_sample.xlsx",sheet = 1)
+
+tmt<-data.frame(tmt)
+
+df<-read_excel("matrix/raw/protien_matrix_swaiss_urine_CVDSBG.xlsx",sheet = 1)
+
+
+df1<-df[,c(4,grep("Abundances",names(df)))]
+
+df2<-df1[,c(grep("126",names(df1)))]
+
+
+urine<-apply(df2,1,function(x){sd(x,na.rm = T)/mean(x,na.rm=T)})
+
+urine2<-data.frame(df$Accession,urine)
+
+df<-read_excel("matrix/raw/CVDSBG_serum_swissprot.xlsx",sheet = 1)
+
+
+df1<-df[,c(4,grep("Abundances",names(df)))]
+df2<-df1[,c(grep("126",names(df1)))]
+
+serum<-apply(df2,1,function(x){sd(x,na.rm = T)/mean(x,na.rm=T)})
+
+serum2<-data.frame(df$Accession,serum)
+
+
+
+###80%NA 
+raw<-read.csv("matrix/urine_protein_matrix_20200506.csv")
+
+df1<-data.frame(raw[,c(5,9:ncol(raw))])
+
+a<-ncol(df1)
+
+df2<-data.frame(apply(df1[,],2,function(X) sum(is.na(X)/90)))
+
+names(df2)<-("NAratio")
+
+df3<-data.frame(df1[,-(which(df2$NAratio>0.8))])
+library(stringr)
+urine80<-data.frame(str_split_fixed(names(df3),"_",2))
+
+
+raw<-read.csv("matrix/serum_protein_matrix_20200518.csv")
+
+df1<-data.frame(raw[,c(5,9:ncol(raw))])
+
+a<-ncol(df1)
+
+df2<-data.frame(apply(df1[,],2,function(X) sum(is.na(X)/90)))
+
+names(df2)<-("NAratio")
+
+df3<-data.frame(df1[,-(which(df2$NAratio>0.8))])
+library(stringr)
+serum80<-data.frame(str_split_fixed(names(df3),"_",2))
+
+
+metabo<-read_excel("matrix/08-20ML QC-IS to 西湖(1).xlsx",sheet = 1)
+
+metabo2<-metabo[,-c(1,32)]
+row.names(metabo2)<-metabo$name
+metabo3<-data.frame(t(metabo2))
+
+metabo4<-metabo3[,-c(17:19)]
+
+metabo5<-apply(metabo4,1,function(x){sd(x,na.rm = T)/mean(x,na.rm=T)})
+
+
+serum3<-as.vector(as.matrix(serum2[which(serum2$df.Accession%in%serum80$X1),2]))
+
+urine3<-as.vector(as.matrix(urine2[which(urine2$df.Accession%in%urine80$X1),2]))
+
+
+
+
+
+library(vioplot)
+
+
+pdf("QC/vioplot0923.pdf")
+
+
+a<-vioplot(urine3,serum3,metabo5,
+        areaEqual=FALSE, col=c("seagreen4", "seagreen4","seagreen4"),
+      rectCol=c("seagreen4","seagreen4","seagreen4"),
+     lineCol=c("black", "black","black"),
+    border=c("black","black","black"),
+ names=c( "urine"  ,"serum","serum"),
+      main="biological replicates", xlab="model", ylab="CV",plotCentre = "point")
+
+
+fivenum(serum3)
+fivenum(urine3)
+fivenum(metabo5)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+```

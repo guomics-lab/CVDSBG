@@ -1,0 +1,280 @@
+
+
+training set
+```{r}
+rm(list = ls())
+library(readr)
+library(plyr)
+library(readxl)
+library(stringr)
+library(magrittr)
+source("../datamining_library_ge20200306.R")
+
+df <- read.csv("../urine_protein_matrix_20200506.csv",stringsAsFactors = F)
+df1 <- df[which(df$DiseaseType %in% c("severe","non_severe")),]
+df2 <- df1[,-c(1:8)]
+row.names(df2) <- df1$ID
+label <- df1$DiseaseType
+names(df2) <- ge.split(names(df2),"_",1)
+df2$label <- label
+patient <- read.csv("../patient_for_RF.csv",stringsAsFactors = F)
+df2 <- df2[patient$Urine.MS.Idc[patient$COVID.19.patients.corhort=="Training"],]
+
+
+df.test <- read.csv("../validation_urine_protein_matrix_20200708.csv",stringsAsFactors = F)
+row.names(df.test) <- gsub("-","_",df.test$sampleID)
+
+df.tmp <- data.frame(t(df.test[,-(1:9)]),stringsAsFactors = F)
+df.tmp2 <- ge.remove.techrep(df.tmp,"rep")
+df.tmp3 <- data.frame(t(df.tmp2),stringsAsFactors = F)
+df.tmp3$DiseaseType <- df.test$DiseaseType[match(row.names(df.tmp3),gsub("-","_",df.test$sampleID))]
+df.tmp3$analysis <- df.test$analysis[match(row.names(df.tmp3),gsub("-","_",df.test$sampleID))]
+
+
+#df.tmp4 <- df.tmp3[which((df.tmp3$DiseaseType=="non_severe") |                              (df.tmp3$DiseaseType=="severe" & df.tmp3$analysis=="yes")),]
+
+df.tmp4 <- df.tmp3[gsub("-","_",patient$Patient.IDa[patient$COVID.19.patients.corhort=="Test"]),]
+df.test2 <- df.tmp4[,-c(4202:4203)]
+names(df.test2) <- ge.split(names(df.test2),"_",1)
+
+overlap <- intersect(names(df2),names(df.test2))
+diff_prot <- read.csv("../diff_protein_severe_non_sever.csv",stringsAsFactors = F)
+overlap2 <- intersect(overlap,ge.split(diff_prot$protein,"_",1))
+```
+
+training test set
+```{r}
+df2.1 <- df2[,overlap2]
+df2.1[is.na(df2.1)] <- 0
+df.test2.1 <- df.test2[,overlap2]
+df.test2.1[is.na(df.test2.1)] <- 0
+
+df2[df2==0] <- NA
+df.test2[df.test2==0] <- NA
+
+
+complex <- read.csv("../complex_list.csv",stringsAsFactors = F)
+df2.2 <- c()
+df.test2.2 <- c()
+for (i in complex$complex) {
+  a <- str_split(i,"\\.")[[1]]
+  if(length(which(overlap %in% a))==2 && 
+     sum(is.na(df2[,a[1]]))==0  && 
+     sum(is.na(df2[,a[2]]))==0  && 
+     sum(is.na(df.test2[,a[1]]))==0  && 
+     sum(is.na(df.test2[,a[2]]))==0  ){
+       df2.2 <- cbind(df2.2,log2(df2[,a[1]])-log2(df2[,a[2]]))
+       colnames(df2.2)[ncol(df2.2)] <- paste0(a[1],".",a[2])
+       
+       df.test2.2 <- cbind(df.test2.2,log2(df.test2[,a[1]])-log2(df.test2[,a[2]]))
+       colnames(df.test2.2)[ncol(df.test2.2)] <- paste0(a[1],".",a[2])
+     }
+}
+
+
+
+
+df3 <- cbind(df2.1,data.frame(df2.2))
+df3$label <- df2$label
+
+df.test3 <- cbind(df.test2.1,data.frame(df.test2.2))
+
+
+
+
+ge.plot.pca(t(df.test3),df.test$DiseaseType)
+
+  data=df.test3
+  type=df.tmp4$DiseaseType
+  title=""
+  df10 <- data
+  names <-type
+
+  colnames(df10) <- names
+  df.pr <- prcomp(df10)
+  a<- ggbiplot(df.pr, obs.scale = 1, var.scale = 10, groups =names,alpha = 0,varname.size= 1, ellipse =F, circle = F,var.axes = F)+
+    geom_point(aes(colour=names),size = 3,alpha=1)+
+    # geom_point(aes(shape=df1$column),size = 3,alpha=1/2)+
+    #scale_color_manual(name="type",values=c("#537e35","#e17832","#f5b819","#5992c6","#282f89"))+
+    theme(legend.direction = 'horizontal',legend.position = 'top',legend.text = element_text(size = 15,color = "black"), legend.title = element_text(size=15,color="black") ,panel.grid.major =element_blank(), panel.grid.minor = element_blank(),panel.background = element_blank(),axis.line = element_line(colour = "black"))+ theme(panel.grid =element_blank())+
+    theme(axis.text = element_text(size = 15,color = "black"))+
+    theme(plot.subtitle=element_text(size=30, hjust=0, color="black"))+
+    theme(axis.title.x=element_text(size=17, hjust=0.5, color="black"))+
+    theme(axis.title.y=element_text(size=17, hjust=0.5, color="black"))             #geom_text(aes(label=type,vjust = -0.8, hjust = 0.5,size=0.5),show.legend = FALSE)
+  ggsave(paste0(title,"_pca.pdf"),plot =a ,width=12,height=8,device = NULL)
+  
+  
+ge.plot.umap <- function(data,type,title=""){
+  df10 <- data
+  df10[is.na(df10)] <- 0
+  names <-type
+  colnames(df10) <- names
+  
+  color <- factor(names) #,levels = c("red","#74A9CF")
+  pdf(paste0(title,"_UMAP.pdf"))
+  df.umap <- umap(t(df10))
+  plot(df.umap$layout,col = color, main = "umap", pch = 20,cex=2,cex.axis=2,cex.lab=2)
+  
+  plot(df.umap$layout, type = "n", main = "umap", pch = 20)
+  text(df.umap$layout, labels = type, col= "DimGrey",cex = 0.8)
+  dev.off()
+}
+df.test3[is.na(df.test3)] <- 0
+ge.plot.umap(t(df.test3),df.tmp4$DiseaseType)
+```
+
+
+ROC RF importance select
+```{r}
+library(randomForest)
+library(caret)
+library(pROC)
+accu <- c()
+for (i in seq(0,3,1)) {
+  set.seed(2020.3)
+  tmpRF2 <- randomForest(as.factor(label) ~ . ,data=df3,importance=T,ntree=1000,nodesize=1)
+  result <- data.frame(importance(tmpRF2,type=1))
+  result1 <- row.names(result)[result$MeanDecreaseAccuracy>i]
+  set.seed(2020.3)
+  folds <- createFolds(df2$label,5)
+  n=0
+  	for(fold in folds){
+  	  n=n+1
+  	   #fold=folds[[8]]
+  	   valids <- df3[fold,result1]
+  	   valids$label <- df3$label[fold]
+  	   trains <- df3[setdiff(1:dim(df3)[1],fold),result1]
+  	   trains$label <- df3$label[setdiff(1:dim(df3)[1],fold)]
+  	   trains$label <- as.factor(trains$label)
+   	   set.seed(2020.3)
+  	   tmpRF <- randomForest(as.factor(label) ~ . ,data=trains,importance=T,ntree=1000,nodesize=1)
+    	  predicted <- predict(tmpRF,valids,type='prob')
+    	  
+        predicts <- t(apply(predicted,1,function(v){v/sum(v)}))
+        
+        colnames(predicts) <- colnames(predicted)
+        predicts <- data.frame(predicts,check.names=F)
+        predicts$predicted <- apply(predicts,1,function(v){names(v)[max(v)==v]})
+        predicts$observed <- valids$label
+        ROC <- roc(predicts$observed, as.numeric(predicts$severe))
+        auc <- as.numeric(ROC[["auc"]])
+    	  acc <- sum(predicts$predicted==predicts$observed)
+    	  accu <- rbind(accu,c(i,n,acc/length(fold),auc))
+  }
+}
+
+##################################################
+tmp3 <- accu
+sum.acc <- c()
+for (j in 1:nrow(tmp3)) {
+  set.seed(2020.3)
+  tmpRF2 <- randomForest(as.factor(label) ~ . ,data=df3,importance=T,ntree=1000,nodesize=1)
+  result <- data.frame(importance(tmpRF2,type=1))
+  result1 <- row.names(result)[result$MeanDecreaseAccuracy>tmp3[j,1]]
+
+
+  set.seed(2020.3)
+  folds <- createFolds(df2$label,5)
+  	   fold=folds[[tmp3[j,2]]]
+  	     valids <- df3[fold,result1]
+  	   valids$label <- df3$label[fold]
+  	   trains <- df3[setdiff(1:dim(df3)[1],fold),result1]
+  	   trains$label <- df3$label[setdiff(1:dim(df3)[1],fold)]
+  	   trains$label <- as.factor(trains$label)
+   	   set.seed(2020.3)
+  	   tmpRF <- randomForest(as.factor(label) ~ . ,data=trains,importance=T,ntree=1000,nodesize=1)
+
+  predicted <- predict(tmpRF,df.test3,type='prob')
+        predicts <- t(apply(predicted,1,function(v){v/sum(v)}))
+        colnames(predicts) <- colnames(predicted)
+        predicts <- data.frame(predicts,check.names=F)
+        predicts$predicted <- apply(predicts,1,function(v){names(v)[max(v)==v]})
+        predicts$observed <- df.tmp4$DiseaseType
+        acc <- sum(predicts$predicted==predicts$observed)
+        sum.acc <- c(sum.acc,acc)
+}
+
+
+##################################################
+  j=14
+  set.seed(2020.3)
+  tmpRF2 <- randomForest(as.factor(label) ~ . ,data=df3,importance=T,ntree=1000,nodesize=1)
+  result <- data.frame(importance(tmpRF2,type=1))
+  result1 <- row.names(result)[result$MeanDecreaseAccuracy>tmp3[j,1]]
+pdf("RF_important_select2.pdf")
+varImpPlot(tmpRF2,n.var=min(length(result1), nrow(tmpRF2$importance)),cex = 0.8)
+dev.off()
+write.csv(result1,"feature.csv")
+  set.seed(2020.3)
+  folds <- createFolds(df2$label,5)
+  	   fold=folds[[tmp3[j,2]]]
+  	     valids <- df3[fold,result1]
+  	   valids$label <- df3$label[fold]
+  	   trains <- df3[setdiff(1:dim(df3)[1],fold),result1]
+  	   trains$label <- df3$label[setdiff(1:dim(df3)[1],fold)]
+  	   trains$label <- as.factor(trains$label)
+   	   set.seed(2020.3)
+  	   tmpRF <- randomForest(as.factor(label) ~ . ,data=trains,importance=T,ntree=1000,nodesize=1)
+
+  predicted <- predict(tmpRF,df.test3,type='prob')
+        predicts <- t(apply(predicted,1,function(v){v/sum(v)}))
+        colnames(predicts) <- colnames(predicted)
+        predicts <- data.frame(predicts,check.names=F)
+        predicts$predicted <- apply(predicts,1,function(v){names(v)[max(v)==v]})
+        predicts$observed <- df.tmp4$DiseaseType
+        ROC <- roc(predicts$observed, as.numeric(predicts$severe))
+        acc <- sum(predicts$predicted==predicts$observed)
+        write.csv(predicts,"predicts2.csv")
+        
+pdf("ROC2.pdf")
+  	   plot.roc(ROC,print.auc=T,col = "blue3",ylim=c(0,1), print.thres="best",	
+  main="RF test ROC",legacy.axes = TRUE,print.auc.cex=1.2)
+dev.off()  	
+
+
+
+df6 <- df.test3[row.names(predicts),result1]
+df7 <- apply(df6, 1, function(x){scale(as.numeric(x))})
+mean <- apply( df7,2,median)
+data <- data.frame(mean,predicts=predicts$non_severe,sample2=row.names(predicts),type2=predicts$observed )
+
+ge.plot.point <- function(data,sample,value,type,group,title="",xlab="sample",ylab="value"){
+  a <- ggplot(data,aes(x=sample,y=value,group=group,color=group))+ 
+    geom_point()+geom_vline(xintercept = 0.5 ,linetype="dotted")+
+    ggtitle(paste0(title,"_pointplot"))+
+    xlab(xlab)+
+    ylab(ylab)+
+    xlim(0,1)+
+    theme(legend.text = element_text(size = 15,color = "black"),legend.position = 'top',
+          legend.title = element_text(size=15,color="black") ,
+          panel.grid.major =element_blank(),
+          panel.grid.minor = element_blank(),
+          panel.background = element_blank(),
+          axis.line = element_line(colour = "black"))+
+    scale_color_manual(values=c("#FDB462","#BC80BD"))+
+    theme(panel.grid =element_blank())+
+    theme(axis.text = element_text(size = 10,color = "black"))+
+    theme(axis.text.x = element_text( hjust = 0.5))+
+    theme(plot.subtitle=element_text(size=30, hjust=0, color="black"))+
+    theme(axis.title.x=element_text(size=17, hjust=0.5, color="black"))+
+    theme(axis.title.y=element_text(size=17, hjust=0.5, color="black"))+  geom_text(aes(label=type,vjust = -0.5, hjust = 0.3),size = 2,show.legend = FALSE)
+  ggsave(paste0(title,"_pointplot.pdf"),plot=a,width=4,height=6)
+}
+
+
+ge.plot.point(data,data$predicts,data$mean,data$sample2,data$type2, "RF predict2","predict value","median")
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+

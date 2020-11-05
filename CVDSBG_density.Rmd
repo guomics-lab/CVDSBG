@@ -1,0 +1,268 @@
+---
+title: "Untitled"
+output: html_document
+---
+
+```{r overlapped complex density}
+rm(list = ls())
+library(ggplot2)
+library(ggplot2)
+library(readxl)
+library(ggpubr)
+serum<-read.csv("matrix/serum_protein_matrix_20200518.csv",row.names = 1)
+urine<-read.csv("matrix/urine_protein_matrix_20200506.csv",row.names = 1)
+serum2<-serum[,which(names(serum)%in%names(urine))]
+urine2<-urine[,which(names(urine)%in%names(serum))]
+
+df<-data.frame(row.names(serum))
+for (i in 8:35) {
+  for(k in (i+1):37){
+    
+df1<-data.frame(log2(serum2[,i])-log2(serum2[,k]))
+    names(df1)<-c(paste0(names(serum2)[i],"_",names(serum2[k])))
+    df<-cbind(df,df1)
+    
+    
+  }
+
+}
+
+df1<-data.frame()
+
+for (i in 2:ncol(df)) {
+
+data4<-data.frame(df[,1],names(df)[i],df[,i])
+  
+df1<-rbind(data4,df1)
+  
+}
+names(df1)<-c("type","prot","value")
+
+
+df2<-data.frame(row.names(urine))
+
+
+for (i in 8:35) {
+  
+  
+  
+  for(k in (i+1):37){
+    
+    df3<-data.frame(log2(urine2[,i])-log2(urine2[,k]))
+    names(df3)<-c(paste0(names(urine2)[i],"_",names(urine2[k])))
+    df2<-cbind(df2,df3)
+    
+    
+  }
+
+}
+
+df4<-data.frame()
+
+for (i in 2:ncol(df2)) {
+
+data4<-data.frame(df2[,1],names(df2)[i],df2[,i])
+  
+df4<-rbind(data4,df4)
+  
+}
+names(df4)<-c("type","prot","value")
+
+
+
+
+urineComplexMatrix<-read.csv("complex_0612/urineComplexMatrix0612.csv",row.names = 1)
+
+serumComplexMatrix<-read.csv("complex_0612/serumComplexMatrix0612.csv",row.names = 1)
+
+
+urineComplex<-urineComplexMatrix[,names(urineComplexMatrix)%in%names(serumComplexMatrix)]
+
+
+serumComplex<-serumComplexMatrix[,names(serumComplexMatrix)%in%names(urineComplexMatrix)]
+
+
+write.csv(urineComplex,"complex_0612/urineComplex_overlap.csv")
+
+write.csv(serumComplex,"complex_0612/serumComplex_overlap.csv")
+
+
+
+df5<-data.frame()
+
+for (i in 8:ncol(urineComplex)) {
+data4<-data.frame(urineComplex[,4],names(urineComplex)[i],urineComplex[,i])
+  
+df5<-rbind(data4,df5)
+  
+}
+names(df5)<-c("DiseaseType","prot","value")
+
+
+
+df6<-data.frame()
+
+for (i in 8:ncol(serumComplex)) {
+
+data4<-data.frame(serumComplex[,4],names(serumComplex)[i],serumComplex[,i])
+  
+df6<-rbind(data4,df6)
+  
+}
+names(df6)<-c("DiseaseType","prot","value")
+
+
+serumRest<-df1
+urineRest<-df4
+serumCompex<-df6
+urineCompex<-df5
+
+
+write.csv(serumRest,"complex_0612/serumRest.csv",row.names = F)
+
+
+write.csv(urineRest,"complex_0612/urineRest.csv",row.names = F)
+
+write.csv(serumCompex,"complex_0612/serumCompex_density.csv",row.names = F)
+
+
+write.csv(urineCompex,"complex_0612/urineCompex_density.csv",row.names = F)
+
+
+
+```
+
+
+```{r Complex_rest density plot}
+rm(list=ls())
+library(ggplot2)
+serumRest<-read.csv("complex_0612/serumRest.csv")
+urineRest<-read.csv("complex_0612/urineRest.csv")
+  
+serumCompex<-read.csv("complex_0612/serumCompex_density.csv")
+
+urineCompex<-read.csv("complex_0612/urineCompex_density.csv")
+
+serumRest2<-data.frame("serumrest",serumRest[,2:3])
+
+names(serumRest2)<-c(names(serumCompex))
+
+serumDentisy<-rbind(serumRest2,serumCompex)
+serumDentisy2<-data.frame(serumDentisy[,c(1:3)])
+
+
+serum_rest_healthy<-data.frame(serumDentisy2[which(serumDentisy2$DiseaseType%in%c("serumrest","healthy")),])
+serum_rest_non_covid<-data.frame(serumDentisy2[which(serumDentisy2$DiseaseType%in%c("serumrest","non_covid")),])
+
+serum_rest_non_severe<-data.frame(serumDentisy2[which(serumDentisy2$DiseaseType%in%c("serumrest","non_severe")),])
+serum_rest_severe<-data.frame(serumDentisy2[which(serumDentisy2$DiseaseType%in%c("serumrest","severe")),])
+
+
+
+healthy<-ggplot(serum_rest_healthy, aes(x = value))+geom_density(aes(color = DiseaseType,fill=DiseaseType),alpha=0.2)+
+theme(legend.direction = 'horizontal',legend.position = 'top',legend.text = element_text(size = 15,color = "black"), legend.title = element_text(size=15,color="black") ,panel.grid.major =element_blank(), panel.grid.minor = element_blank(),panel.background = element_blank(),axis.line = element_line(colour = "black"))+ theme(panel.grid =element_blank())+
+            theme(axis.text = element_text(size = 15,color = "black"))+
+  
+            theme(plot.subtitle=element_text(size=30, hjust=0, color="black"))+
+            theme(axis.title.x=element_text(size=17, hjust=0.5, color="black"))+
+            theme(axis.title.y=element_text(size=17, hjust=0.5, color="black"))
+
+
+non_covid<-ggplot(serum_rest_non_covid, aes(x = value))+geom_density(aes(color = DiseaseType,fill=DiseaseType),alpha=0.2)+
+ theme(legend.direction = 'horizontal',legend.position = 'top',legend.text = element_text(size = 15,color = "black"), legend.title = element_text(size=15,color="black") ,panel.grid.major =element_blank(), panel.grid.minor = element_blank(),panel.background = element_blank(),axis.line = element_line(colour = "black"))+ theme(panel.grid =element_blank())+
+            theme(axis.text = element_text(size = 15,color = "black"))+
+  
+            theme(plot.subtitle=element_text(size=30, hjust=0, color="black"))+
+            theme(axis.title.x=element_text(size=17, hjust=0.5, color="black"))+
+            theme(axis.title.y=element_text(size=17, hjust=0.5, color="black"))
+
+
+non_severe<-ggplot(serum_rest_non_severe, aes(x = value))+geom_density(aes(color = DiseaseType,fill=DiseaseType),alpha=0.2)+
+  theme(legend.direction = 'horizontal',legend.position = 'top',legend.text = element_text(size = 15,color = "black"), legend.title = element_text(size=15,color="black") ,panel.grid.major =element_blank(), panel.grid.minor = element_blank(),panel.background = element_blank(),axis.line = element_line(colour = "black"))+ theme(panel.grid =element_blank())+
+            theme(axis.text = element_text(size = 15,color = "black"))+
+  
+            theme(plot.subtitle=element_text(size=30, hjust=0, color="black"))+
+            theme(axis.title.x=element_text(size=17, hjust=0.5, color="black"))+
+            theme(axis.title.y=element_text(size=17, hjust=0.5, color="black"))
+
+
+severe<-ggplot(serum_rest_severe, aes(x = value))+geom_density(aes(color = DiseaseType,fill=DiseaseType),alpha=0.2)+
+theme(legend.direction = 'horizontal',legend.position = 'top',legend.text = element_text(size = 15,color = "black"), legend.title = element_text(size=15,color="black") ,panel.grid.major =element_blank(), panel.grid.minor = element_blank(),panel.background = element_blank(),axis.line = element_line(colour = "black"))+ theme(panel.grid =element_blank())+
+            theme(axis.text = element_text(size = 15,color = "black"))+
+  
+            theme(plot.subtitle=element_text(size=30, hjust=0, color="black"))+
+            theme(axis.title.x=element_text(size=17, hjust=0.5, color="black"))+
+            theme(axis.title.y=element_text(size=17, hjust=0.5, color="black"))
+
+ggsave("complex_0612/serum_healthy_complex_rest.pdf",plot =healthy,device = NULL)
+
+ggsave("complex_0612/serum_non_covid_complex_rest.pdf",plot =non_covid,device = NULL)
+ggsave("complex_0612/serum_non_severe_complex_rest.pdf",plot =non_severe,device = NULL)
+ggsave("complex_0612/serum_severe_complex_rest.pdf",plot =severe,device = NULL)
+
+
+
+
+
+urineRest2<-data.frame("urinerest",urineRest[,2:3])
+
+names(urineRest2)<-c(names(urineCompex))
+
+urineDentisy<-rbind(urineRest2,urineCompex)
+
+urineDentisy2<-data.frame(urineDentisy[,c(1:3)])
+
+urine_rest_healthy<-data.frame(urineDentisy2[which(urineDentisy2$DiseaseType%in%c("urinerest","healthy")),])
+urine_rest_non_covid<-data.frame(urineDentisy2[which(urineDentisy2$DiseaseType%in%c("urinerest","non_covid")),])
+
+urine_rest_non_severe<-data.frame(urineDentisy2[which(urineDentisy2$DiseaseType%in%c("urinerest","non_severe")),])
+urine_rest_severe<-data.frame(urineDentisy2[which(urineDentisy2$DiseaseType%in%c("urinerest","severe")),])
+
+
+
+healthy<-ggplot(urine_rest_healthy, aes(x = value))+geom_density(aes(color = DiseaseType,fill=DiseaseType),alpha=0.2)+
+theme(legend.direction = 'horizontal',legend.position = 'top',legend.text = element_text(size = 15,color = "black"), legend.title = element_text(size=15,color="black") ,panel.grid.major =element_blank(), panel.grid.minor = element_blank(),panel.background = element_blank(),axis.line = element_line(colour = "black"))+ theme(panel.grid =element_blank())+
+            theme(axis.text = element_text(size = 15,color = "black"))+
+  
+            theme(plot.subtitle=element_text(size=30, hjust=0, color="black"))+
+            theme(axis.title.x=element_text(size=17, hjust=0.5, color="black"))+
+            theme(axis.title.y=element_text(size=17, hjust=0.5, color="black"))
+
+
+
+non_covid<-ggplot(urine_rest_non_covid, aes(x = value))+geom_density(aes(color = DiseaseType,fill=DiseaseType),alpha=0.2)+
+ theme(legend.direction = 'horizontal',legend.position = 'top',legend.text = element_text(size = 15,color = "black"), legend.title = element_text(size=15,color="black") ,panel.grid.major =element_blank(), panel.grid.minor = element_blank(),panel.background = element_blank(),axis.line = element_line(colour = "black"))+ theme(panel.grid =element_blank())+
+            theme(axis.text = element_text(size = 15,color = "black"))+
+  
+            theme(plot.subtitle=element_text(size=30, hjust=0, color="black"))+
+            theme(axis.title.x=element_text(size=17, hjust=0.5, color="black"))+
+            theme(axis.title.y=element_text(size=17, hjust=0.5, color="black"))
+
+
+non_severe<-ggplot(urine_rest_non_severe, aes(x = value))+geom_density(aes(color = DiseaseType,fill=DiseaseType),alpha=0.2)+
+  theme(legend.direction = 'horizontal',legend.position = 'top',legend.text = element_text(size = 15,color = "black"), legend.title = element_text(size=15,color="black") ,panel.grid.major =element_blank(), panel.grid.minor = element_blank(),panel.background = element_blank(),axis.line = element_line(colour = "black"))+ theme(panel.grid =element_blank())+
+            theme(axis.text = element_text(size = 15,color = "black"))+
+  
+            theme(plot.subtitle=element_text(size=30, hjust=0, color="black"))+
+            theme(axis.title.x=element_text(size=17, hjust=0.5, color="black"))+
+            theme(axis.title.y=element_text(size=17, hjust=0.5, color="black"))
+
+
+severe<-ggplot(urine_rest_severe, aes(x = value))+geom_density(aes(color = DiseaseType,fill=DiseaseType),alpha=0.2)+
+theme(legend.direction = 'horizontal',legend.position = 'top',legend.text = element_text(size = 15,color = "black"), legend.title = element_text(size=15,color="black") ,panel.grid.major =element_blank(), panel.grid.minor = element_blank(),panel.background = element_blank(),axis.line = element_line(colour = "black"))+ theme(panel.grid =element_blank())+
+            theme(axis.text = element_text(size = 15,color = "black"))+
+  
+            theme(plot.subtitle=element_text(size=30, hjust=0, color="black"))+
+            theme(axis.title.x=element_text(size=17, hjust=0.5, color="black"))+
+            theme(axis.title.y=element_text(size=17, hjust=0.5, color="black"))
+
+ggsave("complex_0612/urine_healthy_complex_rest.pdf",plot =healthy,device = NULL)
+ggsave("complex_0612/urine_non_covid_complex_rest.pdf",plot =non_covid,device = NULL)
+ggsave("complex_0612/urine_non_severe_complex_rest.pdf",plot =non_severe,device = NULL)
+ggsave("complex_0612/urine_severe_complex_rest.pdf",plot =severe,device = NULL)
+
+
+
+
+```
+

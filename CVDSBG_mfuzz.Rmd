@@ -1,0 +1,266 @@
+---
+title: "Untitled"
+output: html_document
+---
+
+```{r Mfuzz_serum}
+
+rm(list = ls())
+
+library(readxl)
+library(umap)
+library(RColorBrewer)
+source("common.R")
+source("datamining_library_ge20200306.R")
+library(Mfuzz)
+
+vol<-read.csv("volcanoplot/serum/vol_serum2.csv")
+
+
+group<-unique(vol$group)
+
+
+volmfuzz<-data.frame(vol[which(vol$group%in%c( "covid_healthy","severe_non_severe" )),2])
+
+
+background<-data.frame(vol[-which(vol$group%in%c( "covid_healthy","severe_non_severe" )),2])
+
+
+names(volmfuzz)<-c("protein")
+
+names(background)<-c("protein")
+
+mfuzzprot<-data.frame(volmfuzz[-which(volmfuzz$protein %in%c(as.matrix(background$protein))),])
+
+prot<-c(as.matrix(unique(mfuzzprot$volmfuzz..which.volmfuzz.protein..in..c.as.matrix.background.protein.....)))
+
+######prot
+
+raw<-read.csv("matrix/serum_protein_matrix_20200518.csv")
+
+df1<-data.frame(raw[,c(5,9:ncol(raw))])
+
+a<-ncol(df1)
+
+df2<-data.frame(apply(df1[,],2,function(X) sum(is.na(X)/90)))
+
+names(df2)<-("NAratio")
+
+df3<-data.frame(df1[,-(which(df2$NAratio>0.8))])
+
+df4<-data.frame(df3[order(df3$DiseaseType),])
+
+######MFUZZ
+mfuzz<-data.frame(df4[,c(1,which(names(df4)%in%prot))])
+mfuzz2<- aggregate(mfuzz[,2:ncol(mfuzz)],by=list(mfuzz$DiseaseType),mean,na.rm=TRUE)
+row.names(mfuzz2)<-mfuzz2$Group.1
+mfuzz3<-data.frame(t(mfuzz2[-2,-1]))
+
+set.seed(2020)
+a<-ge.mfuzz.cselection(mfuzz3,range = seq(3,20,5))
+b<-ge.mfuzz.getresult(a,8,"mfuzz/serum/mfuzz_8_from_volcano")
+###########
+
+readCSV <- function(dir_dta){
+  file_list <- list.files(path=dir_dta,full.names=T)
+  file_list1<-data.frame(file_list)
+  
+  file_list2<-as.character(file_list1[c(grep(pattern = 'mfuzz',file_list1[,1])),])
+  varSave_func <- function(x){
+    table_x <- read.csv(file=x)
+  }
+  a<-invisible(lapply(file_list2,FUN=varSave_func))
+  b<-as.data.frame(a[[1]])
+  for (i in 2:length(a)){
+    c<-rbind(b,a[[i]])
+    b <- c
+  }
+  return(b)
+}
+
+
+
+##########调用函数
+dir_dta <- "mfuzz/serum/up_down/"
+
+result <-readCSV(dir_dta)
+
+write.csv(result,"mfuzz/serum/serum_mfuzz_down_up.csv",row.names = F)
+
+
+
+```
+
+
+```{r Mfuzz_urine}
+
+rm(list = ls())
+
+library(readxl)
+library(umap)
+library(RColorBrewer)
+source("common.R")
+source("datamining_library_ge20200306.R")
+library(Mfuzz)
+
+vol<-read.csv("volcanoplot/urine/vol_urine.csv")
+
+
+group<-unique(vol$group)
+
+
+volmfuzz<-data.frame(vol[which(vol$group%in%c( "covid_healthy","severe_non_severe" )),2])
+
+
+background<-data.frame(vol[-which(vol$group%in%c( "covid_healthy","severe_non_severe" )),2])
+
+
+names(volmfuzz)<-c("protein")
+
+names(background)<-c("protein")
+
+mfuzzprot<-data.frame(volmfuzz[-which(volmfuzz$protein %in%c(as.matrix(background$protein))),])
+
+prot<-c(as.matrix(unique(mfuzzprot$volmfuzz..which.volmfuzz.protein..in..c.as.matrix.background.protein.....)))
+
+######prot
+
+raw<-read.csv("matrix/urine_protein_matrix_20200506.csv")
+
+df1<-data.frame(raw[,c(5,9:ncol(raw))])
+
+a<-ncol(df1)
+
+df2<-data.frame(apply(df1[,],2,function(X) sum(is.na(X)/90)))
+
+names(df2)<-("NAratio")
+
+df3<-data.frame(df1[,-(which(df2$NAratio>0.8))])
+
+df4<-data.frame(df3[order(df3$DiseaseType),])
+
+######MFUZZ
+mfuzz<-data.frame(df4[,c(1,which(names(df4)%in%prot))])
+mfuzz2<- aggregate(mfuzz[,2:ncol(mfuzz)],by=list(mfuzz$DiseaseType),mean,na.rm=TRUE)
+row.names(mfuzz2)<-mfuzz2$Group.1
+mfuzz3<-data.frame(t(mfuzz2[-2,-1]))
+
+set.seed(2022)
+a<-ge.mfuzz.cselection(mfuzz3,range = seq(3,20,5))
+b<-ge.mfuzz.getresult(a,8,"mfuzz/urine/urine_mfuzz_8_from_volcano")
+###########
+
+readCSV <- function(dir_dta){
+  file_list <- list.files(path=dir_dta,full.names=T)
+  file_list1<-data.frame(file_list)
+  
+  file_list2<-as.character(file_list1[c(grep(pattern = 'mfuzz',file_list1[,1])),])
+  varSave_func <- function(x){
+    table_x <- read.csv(file=x)
+  }
+  a<-invisible(lapply(file_list2,FUN=varSave_func))
+  b<-as.data.frame(a[[1]])
+  for (i in 2:length(a)){
+    c<-rbind(b,a[[i]])
+    b <- c
+  }
+  return(b)
+}
+
+
+
+##########调用函数
+dir_dta <- "mfuzz/urine/up_down/"
+
+result <-readCSV(dir_dta)
+
+write.csv(result,"mfuzz/urine/urine_mfuzz_down_up.csv",row.names = F)
+
+
+
+```
+
+```{r Mfuzz_metabo}
+
+rm(list = ls())
+
+library(readxl)
+library(umap)
+library(RColorBrewer)
+source("common.R")
+source("datamining_library_ge20200306.R")
+library(Mfuzz)
+
+vol<-read.csv("volcanoplot/106metabo_normalized_by_metabo_creatinine/combine/106_metabo_vol_combine.csv")
+group<-unique(vol$group)
+
+
+volmfuzz<-data.frame(vol[which(vol$group%in%c( "covid_healthy","severe_non_severe" )),2])
+
+
+background<-data.frame(vol[-which(vol$group%in%c( "covid_healthy","severe_non_severe" )),2])
+
+
+names(volmfuzz)<-c("protein")
+
+names(background)<-c("protein")
+
+mfuzzprot<-data.frame(volmfuzz[-which(volmfuzz$protein %in%c(as.matrix(background$protein))),])
+
+prot<-c(as.matrix(unique(mfuzzprot$volmfuzz..which.volmfuzz.protein..in..c.as.matrix.background.protein.....)))
+
+######prot
+
+raw<-read.csv("matrix/urine_106metabo_matrix_normalized_metabo_creatinine_20200909.csv",check.names = F)
+
+df1<-data.frame(raw[,c(2,3:ncol(raw))],check.names = F)
+
+a<-ncol(df1)
+
+df2<-data.frame(apply(df1[,],2,function(X) sum(is.na(X)/106)),check.names = F)
+
+names(df2)<-("NAratio")
+
+df3<-data.frame(df1[,-(which(df2$NAratio>0.8))],check.names = F)
+
+df4<-data.frame(df3[order(df3$DiseaseType),],check.names = F)
+
+######MFUZZ
+mfuzz<-data.frame(df4[,c(1,which(names(df4)%in%prot))],check.names = F)
+mfuzz2<- aggregate(mfuzz[,2:ncol(mfuzz)],by=list(mfuzz$DiseaseType),mean,na.rm=TRUE)
+row.names(mfuzz2)<-mfuzz2$Group.1
+mfuzz3<-data.frame(t(mfuzz2[-2,-1]),check.names = F)
+
+set.seed(2022)
+a<-ge.mfuzz.cselection(mfuzz3,range = seq(3,20,5))
+b<-ge.mfuzz.getresult(a,8,"mfuzz/106urine_metabo//106urine_metabo_mfuzz_8_from_volcano")
+###########
+
+readCSV <- function(dir_dta){
+  file_list <- list.files(path=dir_dta,full.names=T)
+  file_list1<-data.frame(file_list)
+  
+  file_list2<-as.character(file_list1[c(grep(pattern = 'mfuzz',file_list1[,1])),])
+  varSave_func <- function(x){
+    table_x <- read.csv(file=x)
+  }
+  a<-invisible(lapply(file_list2,FUN=varSave_func))
+  b<-as.data.frame(a[[1]])
+  for (i in 2:length(a)){
+    c<-rbind(b,a[[i]])
+    b <- c
+  }
+  return(b)
+}
+
+
+
+##########调用函数
+dir_dta <- "mfuzz/106urine_metabo/up_down/"
+
+result <-readCSV(dir_dta)
+
+write.csv(result,"mfuzz/106urine_metabo/106metabo_urine_mfuzz_down_up.csv",row.names = F)
+
+
+```

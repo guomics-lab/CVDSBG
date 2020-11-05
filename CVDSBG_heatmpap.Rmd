@@ -1,0 +1,575 @@
+---
+title: "Untitled"
+output: html_document
+---
+
+```{r Heatmap-serum}
+rm(list = ls())
+
+library(ggplot2)
+library(readxl)
+library(RColorBrewer)
+library(pheatmap)
+
+library(ggpubr)
+
+source("datamining_library_ge20200306.R")
+
+source("common.R")
+raw<-read.csv("matrix/serum_protein_matrix_20200518.csv")
+
+# raw<-data.frame(raw[-which(raw$batchId=="b1"),])
+# 
+ raw<-data.frame(raw[-which(raw$DiseaseType=="non_covid"),])
+
+df1<-data.frame(raw[,c(1,5,9:ncol(raw))])
+
+df1<-df1[order(df1$DiseaseType,decreasing = F),]
+
+a<-ncol(df1)
+
+df2<-data.frame(apply(df1[,],2,function(X) sum(is.na(X)/90)))
+
+names(df2)<-("NAratio")
+
+
+df3<-data.frame(df1[,])
+
+# protein84<-read_excel("84protien/3Diease_prot.xlsx",sheet="LIVER")
+
+# protein84<-read_excel("84protien/3Diease_prot.xlsx",sheet="Cardio")
+# 
+ protein124<-read.csv("mfuzz/serum/serum_mfuzz_down_up.csv")
+
+data2<-data.frame(df3[,c(1,which(names(df3)%in%c(as.matrix(protein124$X))))])
+
+write.csv(data2,"heatmap_test.csv",row.names = F)
+# row.names(data2)<-data2$ID
+# data3<-data.frame(t(data2[,-1]))
+
+label<-data.frame(raw[,c(1:8)])
+
+write.csv(label,"lable_test.csv",row.names = F)
+annotation_col<- data.frame(type = factor(label$DiseaseType,levels = c("healthy","non_severe","severe")),
+                            
+                
+                            
+                            sex=label$sex,
+                            age=label$age,
+                            row.names = label$ID)
+
+
+
+
+
+type_color <- c("#80AA31","#D9942C","#8C2826") 
+# type_color <- c("#80AA31","#5B7BAA","#D9942C","#8C2826")
+
+
+names(type_color) <- c("healthy","non_severe","severe")
+
+sex_color <- c("red","#016D06")
+
+names(sex_color) <- c("F","M")
+
+ann_colors <- list(type=type_color,sex=sex_color)
+# 
+# colors = c( brewer.pal(11,"RdYlGn")[9:2])
+
+colors = colorRampPalette(c("blue", "white","red" ))(1000)
+
+row.names(data2)<-data2$ID
+
+
+df2<-data.frame(t(data2[,-c(1)]))
+
+
+
+df2[is.na(df2)]<-0
+
+counts_filtered_df <- df2[apply(df2, MARGIN = 1, FUN = function(x) sd(x) != 0),]
+
+
+
+pheatmap(counts_filtered_df,scale="row",color = colors, annotation_col = annotation_col,
+         annotation_colors = ann_colors, fontsize_col = 10, cluster_rows = T, cluster_cols = F,show_rownames =F, show_colnames =F ,fontsize = 10,cellwidth=2,cellheight=1,filename = paste0("heatmap/serum_heatmap124",".pdf"),main = paste0("serum_heatmap124"))
+```
+
+```{r Heatmap-urine}
+rm(list = ls())
+
+library(ggplot2)
+library(readxl)
+library(RColorBrewer)
+library(pheatmap)
+
+library(ggpubr)
+
+source("datamining_library_ge20200306.R")
+
+source("common.R")
+raw<-read.csv("matrix/urine_protein_matrix_20200506.csv")
+
+# raw<-data.frame(raw[-which(raw$batchId=="b1"),])
+# 
+ raw<-data.frame(raw[-which(raw$DiseaseType=="non_covid"),])
+
+df1<-data.frame(raw[,c(1,5,9:ncol(raw))])
+
+df1<-df1[order(df1$DiseaseType,decreasing = F),]
+
+a<-ncol(df1)
+
+df2<-data.frame(apply(df1[,],2,function(X) sum(is.na(X)/90)))
+
+names(df2)<-("NAratio")
+
+
+df3<-data.frame(df1[,])
+
+# protein84<-read_excel("84protien/3Diease_prot.xlsx",sheet="LIVER")
+
+# protein84<-read_excel("84protien/3Diease_prot.xlsx",sheet="Cardio")
+# 
+ protein124<-read.csv("mfuzz/urine/urine_mfuzz_down_up.csv")
+
+data2<-data.frame(df3[,c(1,which(names(df3)%in%c(as.matrix(protein124$X))))])
+# row.names(data2)<-data2$ID
+# data3<-data.frame(t(data2[,-1]))
+
+label<-data.frame(raw[,c(1:8)])
+annotation_col<- data.frame(type = factor(label$DiseaseType,levels = c("healthy","non_severe","severe")),
+                            
+                
+                            
+                            sex=label$sex,
+                            age=label$age,
+                            row.names = label$ID)
+
+
+
+
+
+type_color <- c("#80AA31","#D9942C","#8C2826") 
+# type_color <- c("#80AA31","#5B7BAA","#D9942C","#8C2826")
+
+
+names(type_color) <- c("healthy","non_severe","severe")
+
+sex_color <- c("red","#016D06")
+
+names(sex_color) <- c("F","M")
+
+ann_colors <- list(type=type_color,sex=sex_color)
+# 
+# colors = c( brewer.pal(11,"RdYlGn")[9:2])
+
+colors = colorRampPalette(c("blue", "white","red" ))(1000)
+
+row.names(data2)<-data2$ID
+
+
+df2<-data.frame(t(data2[,-c(1)]))
+
+
+
+df2[is.na(df2)]<-0
+
+counts_filtered_df <- df2[apply(df2, MARGIN = 1, FUN = function(x) sd(x) != 0),]
+
+
+
+pheatmap(counts_filtered_df,scale="row",color = colors, annotation_col = annotation_col,
+         annotation_colors = ann_colors, fontsize_col = 10, cluster_rows = T, cluster_cols = F,show_rownames =F, show_colnames =F ,fontsize = 10,cellwidth=3,cellheight=0.5,filename = paste0("heatmap/urine_heatmap580",".pdf"),main = paste0("urine_heatmap580"))
+```
+
+
+```{r Heatmap-urine_meatbo}
+rm(list = ls())
+
+library(ggplot2)
+library(readxl)
+library(RColorBrewer)
+library(pheatmap)
+library(ggpubr)
+
+source("datamining_library_ge20200306.R")
+source("common.R")
+raw0<-read.csv("matrix/urine_106metabo_matrix_normalized_metabo_creatinine_20200909.csv",check.names = F)
+
+sampleInfo<-read_excel("Figure/SuppleTables/TableS1_20200914.xlsx",sheet = 2)
+sampleInfo2<-sampleInfo[,c(1,13,14)]
+
+names(sampleInfo2)<-c("sampleID",names(sampleInfo2[,-1]))
+
+
+raw<-merge(sampleInfo2,raw0,by.x="sampleID",all=F)
+
+raw$Sexh<-gsub("2","F",raw$Sexh)
+raw$Sexh<-gsub("1","M",raw$Sexh)
+
+# raw<-data.frame(raw[-which(raw$batchId=="b1"),])
+# 
+raw<-data.frame(raw[-which(raw$DiseaseType=="non_covid"),],check.names = F)
+
+df1<-data.frame(raw[,c(1,4,5:ncol(raw))],check.names = F)
+
+df1<-df1[order(df1$DiseaseType,decreasing = F),]
+
+a<-ncol(df1)
+
+df2<-data.frame(apply(df1[,],2,function(X) sum(is.na(X)/90)),check.names = F)
+
+names(df2)<-("NAratio")
+
+
+df3<-data.frame(df1[,],check.names = F)
+
+# protein84<-read_excel("84protien/3Diease_prot.xlsx",sheet="LIVER")
+
+# protein84<-read_excel("84protien/3Diease_prot.xlsx",sheet="Cardio")
+# 
+ protein124<-read.csv("mfuzz/106urine_metabo/106metabo_urine_mfuzz_down_up.csv")
+
+data2<-data.frame(df3[,c(1,which(names(df3)%in%c(as.matrix(protein124$X))))],check.names = F)
+# row.names(data2)<-data2$ID
+# data3<-data.frame(t(data2[,-1]))
+
+label<-data.frame(raw[,c(1:4)])
+annotation_col<- data.frame(type = factor(label$DiseaseType,levels = c("healthy","non_severe","severe")),
+                            
+                
+                            
+                            sex=label$Sexh,
+                            age=label$Age.year.,
+                            row.names = label$sampleID)
+
+
+
+
+
+type_color <- c("#80AA31","#D9942C","#8C2826") 
+# type_color <- c("#80AA31","#5B7BAA","#D9942C","#8C2826")
+
+
+names(type_color) <- c("healthy","non_severe","severe")
+
+sex_color <- c("red","#016D06")
+
+names(sex_color) <- c("F","M")
+
+ann_colors <- list(type=type_color,sex=sex_color)
+# 
+# colors = c( brewer.pal(11,"RdYlGn")[9:2])
+
+colors = colorRampPalette(c("blue", "white","red" ))(1000)
+
+row.names(data2)<-data2$sampleID
+
+
+df2<-data.frame(t(data2[,-c(1)]),check.names = F)
+
+
+
+df2[is.na(df2)]<-0
+
+counts_filtered_df <- df2[apply(df2, MARGIN = 1, FUN = function(x) sd(x) != 0),]
+
+
+
+pheatmap(counts_filtered_df,scale="row",color = colors, annotation_col = annotation_col,
+         annotation_colors = ann_colors, fontsize_col = 10, cluster_rows = T, cluster_cols = F,show_rownames =F, show_colnames =F ,fontsize = 10,cellwidth=3,cellheight=5,filename = paste0("heatmap/urine_metabo138",".pdf"),main = paste0("rine_metabo138"))
+
+
+
+```
+
+```{r heatmap for supplementary infomation figures}
+rm(list = ls())
+
+library(RColorBrewer)
+library(pheatmap)
+library(readxl)
+library(stringr)
+serum<-read.csv("matrix/serum_protein_matrix_20200518.csv")
+serum2<-data.frame(serum[-which(serum$DiseaseType=="non_covid"),])
+serum3<-data.frame(serum2[,c(1,5,9:ncol(serum2))])
+serum3<-serum3[order(serum3$DiseaseType,decreasing = F),]
+urine<-read.csv("matrix/urine_protein_matrix_20200506.csv")
+urine2<-data.frame(urine[-which(urine$DiseaseType=="non_covid"),])
+urine3<-data.frame(urine2[,c(1,5,9:ncol(urine2))])
+urine3<-urine3[order(urine3$DiseaseType,decreasing = F),]
+urine_metabO<-read.csv("matrix/urine_106metabo_matrix_normalized_metabo_creatinine_20200909.csv",check.names = F)
+protein<-read.csv("serum_urine_review/Figure/review_proteins_and_metbolites20201024.csv")
+
+###secretion 
+secretion_serum<-data.frame(serum3[,c(1,which(names(serum3)%in%c(as.matrix(protein$Secretion.or.exocytosis))))])
+secretion_serum<-data.frame(secretion_serum[,c(1,which(names(secretion_serum)%in%c(as.matrix(protein$Serum_DEPs))))])
+label_serum<-data.frame(serum2[,c(1:8)])
+annotation_col_serum<- data.frame(type = factor(label_serum$DiseaseType,levels = c("healthy","non_severe","severe")),
+sex=label_serum$sex,age=label_serum$age, row.names = label_serum$ID)
+
+type_color <- c("#80AA31","#D9942C","#8C2826") 
+names(type_color) <- c("healthy","non_severe","severe")
+sex_color <- c("red","#016D06")
+names(sex_color) <- c("F","M")
+
+ann_colors <- list(type=type_color,sex=sex_color)
+colors = c( brewer.pal(11,"RdYlGn")[11:1])
+row.names(secretion_serum)<-secretion_serum$ID
+
+secretion_serum2<-data.frame(t(secretion_serum[,-c(1)]))
+secretion_serum2[is.na(secretion_serum2)]<-0
+
+
+row.names(secretion_serum2)<-data.frame(str_split_fixed(row.names(secretion_serum2),"_",2))[,2]
+pheatmap(secretion_serum2,scale="row",color = colors,annotation_col = annotation_col_serum,
+        annotation_colors = ann_colors, fontsize_col = 10, cluster_rows = T, cluster_cols = F,show_rownames =T, show_colnames =F ,fontsize = 10,cellwidth=5,cellheight=10,filename = paste0("serum_urine_review/Figure/secretion_serum_103",".pdf"),main = paste0("secretion_serum_103"))
+
+secretion_urine<-data.frame(urine3[,c(1,which(names(urine3)%in%c(as.matrix(protein$Secretion.or.exocytosis))))])
+secretion_urine<-data.frame(secretion_urine[,c(1,which(names(secretion_urine)%in%c(as.matrix(protein$Urine_DEPs))))])
+label_urine<-data.frame(urine2[,c(1:8)])
+annotation_col_urine<- data.frame(type = factor(label_urine$DiseaseType,levels = c("healthy","non_severe","severe")),
+sex=label_urine$sex,age=label_urine$age, row.names = label_urine$ID)
+
+type_color <- c("#80AA31","#D9942C","#8C2826") 
+names(type_color) <- c("healthy","non_severe","severe")
+sex_color <- c("red","#016D06")
+names(sex_color) <- c("F","M")
+
+ann_colors <- list(type=type_color,sex=sex_color)
+colors = c( brewer.pal(11,"RdYlGn")[11:1])
+
+row.names(secretion_urine)<-secretion_urine$ID
+secretion_urine2<-data.frame(t(secretion_urine[,-c(1)]))
+secretion_urine2[is.na(secretion_urine2)]<-0
+row.names(secretion_urine2)<-data.frame(str_split_fixed(row.names(secretion_urine2),"_",2))[,2]
+pheatmap(secretion_urine2,scale="row",color = colors,annotation_col = annotation_col_urine,
+        annotation_colors = ann_colors, fontsize_col = 10, cluster_rows = T, cluster_cols = F,show_rownames =T, show_colnames =F ,fontsize = 10,cellwidth=5,cellheight=10,filename = paste0("serum_urine_review/Figure/secretion_urine_103",".pdf"),main = paste0("secretion_urine_103"))
+
+
+###immune 
+
+immnue_serum<-data.frame(serum3[,c(1,which(names(serum3)%in%c(as.matrix(protein$Immune.response.relevant.protein))))])
+immnue_serum<-data.frame(immnue_serum[,c(1,which(names(immnue_serum)%in%c(as.matrix(protein$Serum_DEPs))))])
+label_serum<-data.frame(serum2[,c(1:8)])
+annotation_col_serum<- data.frame(type = factor(label_serum$DiseaseType,levels = c("healthy","non_severe","severe")),
+sex=label_serum$sex,age=label_serum$age, row.names = label_serum$ID)
+
+type_color <- c("#80AA31","#D9942C","#8C2826") 
+names(type_color) <- c("healthy","non_severe","severe")
+sex_color <- c("red","#016D06")
+names(sex_color) <- c("F","M")
+
+ann_colors <- list(type=type_color,sex=sex_color)
+colors = c( brewer.pal(11,"RdYlGn")[11:1])
+
+row.names(immnue_serum)<-immnue_serum$ID
+immnue_serum2<-data.frame(t(immnue_serum[,-c(1)]))
+immnue_serum2[is.na(immnue_serum2)]<-0
+row.names(immnue_serum2)<-data.frame(str_split_fixed(row.names(immnue_serum2),"_",2))[,2]
+pheatmap(immnue_serum2,scale="row",color = colors,annotation_col = annotation_col_serum,
+        annotation_colors = ann_colors, fontsize_col = 10, cluster_rows = T, cluster_cols = F,show_rownames =T, show_colnames =F ,fontsize = 10,cellwidth=5,cellheight=10,filename = paste0("serum_urine_review/Figure/immnue_serum_103",".pdf"),main = paste0("immnue_serum_103"))
+
+immnue_urine<-data.frame(urine3[,c(1,which(names(urine3)%in%c(as.matrix(protein$Immune.response.relevant.protein))))])
+immnue_urine<-data.frame(immnue_urine[,c(1,which(names(immnue_urine)%in%c(as.matrix(protein$Urine_DEPs))))])
+label_urine<-data.frame(urine2[,c(1:8)])
+annotation_col_urine<- data.frame(type = factor(label_urine$DiseaseType,levels = c("healthy","non_severe","severe")),
+sex=label_urine$sex,age=label_urine$age, row.names = label_urine$ID)
+
+type_color <- c("#80AA31","#D9942C","#8C2826") 
+names(type_color) <- c("healthy","non_severe","severe")
+sex_color <- c("red","#016D06")
+names(sex_color) <- c("F","M")
+
+ann_colors <- list(type=type_color,sex=sex_color)
+colors = c( brewer.pal(11,"RdYlGn")[11:1])
+
+row.names(immnue_urine)<-immnue_urine$ID
+immnue_urine2<-data.frame(t(immnue_urine[,-c(1)]))
+immnue_urine2[is.na(immnue_urine2)]<-0
+row.names(immnue_urine2)<-data.frame(str_split_fixed(row.names(immnue_urine2),"_",2))[,2]
+pheatmap(immnue_urine2,scale="row",color = colors,annotation_col = annotation_col_urine,
+        annotation_colors = ann_colors, fontsize_col = 10, cluster_rows = T, cluster_cols = F,show_rownames =T, show_colnames =F ,fontsize = 10,cellwidth=5,cellheight=10,filename = paste0("serum_urine_review/Figure/immnue_urine_103",".pdf"),main = paste0("immnue_urine_103"))
+
+
+
+###overlapped
+
+overlapped_serum<-data.frame(serum3[,c(1,which(names(serum3)%in%c(as.matrix(protein$overlapped_DEPS))))])
+overlapped_serum<-data.frame(overlapped_serum[,c(1,which(names(overlapped_serum)%in%c(as.matrix(protein$Serum_DEPs))))])
+label_serum<-data.frame(serum2[,c(1:8)])
+annotation_col_serum<- data.frame(type = factor(label_serum$DiseaseType,levels = c("healthy","non_severe","severe")),
+sex=label_serum$sex,age=label_serum$age, row.names = label_serum$ID)
+
+type_color <- c("#80AA31","#D9942C","#8C2826") 
+names(type_color) <- c("healthy","non_severe","severe")
+sex_color <- c("red","#016D06")
+names(sex_color) <- c("F","M")
+
+ann_colors <- list(type=type_color,sex=sex_color)
+colors = c( brewer.pal(11,"RdYlGn")[11:1])
+
+row.names(overlapped_serum)<-overlapped_serum$ID
+overlapped_serum2<-data.frame(t(overlapped_serum[,-c(1)]))
+overlapped_serum2[is.na(overlapped_serum2)]<-0
+overlapped_serum3<-overlapped_serum2[c(1,18,8,4,11,10,7,3,12,16,14,13,9,5,6,17,15,2),]
+
+
+row.names(overlapped_serum3)<-data.frame(str_split_fixed(row.names(overlapped_serum3),"_",2))[,2]
+pheatmap(overlapped_serum3,scale="row",color = colors,annotation_col = annotation_col_serum,
+        annotation_colors = ann_colors, fontsize_col = 10, cluster_rows = F, cluster_cols = F,show_rownames =T, show_colnames =F ,fontsize = 10,cellwidth=5,cellheight=10,filename = paste0("serum_urine_review/Figure/overlapped_serum_103",".pdf"),main = paste0("overlapped_serum_103"))
+
+overlapped_urine<-data.frame(urine3[,c(1,which(names(urine3)%in%c(as.matrix(protein$overlapped_DEPS))))])
+overlapped_urine<-data.frame(overlapped_urine[,c(1,which(names(overlapped_urine)%in%c(as.matrix(protein$Urine_DEPs))))])
+label_urine<-data.frame(urine2[,c(1:8)])
+annotation_col_urine<- data.frame(type = factor(label_urine$DiseaseType,levels = c("healthy","non_severe","severe")),
+sex=label_urine$sex,age=label_urine$age, row.names = label_urine$ID)
+
+type_color <- c("#80AA31","#D9942C","#8C2826") 
+names(type_color) <- c("healthy","non_severe","severe")
+sex_color <- c("red","#016D06")
+names(sex_color) <- c("F","M")
+
+ann_colors <- list(type=type_color,sex=sex_color)
+colors = c( brewer.pal(11,"RdYlGn")[11:1])
+
+row.names(overlapped_urine)<-overlapped_urine$ID
+overlapped_urine2<-data.frame(t(overlapped_urine[,-c(1)]))
+overlapped_urine2[is.na(overlapped_urine2)]<-0
+overlapped_urine3<-overlapped_urine2[c(12,8,1,6,5,7,9,2,16,10,11,13,17,3,4,14,18,15),]
+
+
+row.names(overlapped_urine3)<-data.frame(str_split_fixed(row.names(overlapped_urine3),"_",2))[,2]
+pheatmap(overlapped_urine3,scale="row",color = colors,annotation_col = annotation_col_urine,
+        annotation_colors = ann_colors, fontsize_col = 10, cluster_rows = F, cluster_cols = F,show_rownames =T, show_colnames =F ,fontsize = 10,cellwidth=5,cellheight=10,filename = paste0("serum_urine_review/Figure/overlapped_urine_103",".pdf"),main = paste0("overlapped_urine_103"))
+
+#### virubudding
+
+virusBudding_urine<-data.frame(urine3[,c(1,which(names(urine3)%in%c(as.matrix(protein$Virus.related.relevant.proteins))))])
+virusBudding_urine<-data.frame(virusBudding_urine[,c(1,which(names(virusBudding_urine)%in%c(as.matrix(protein$Urine_DEPs))))])
+label_urine<-data.frame(urine2[,c(1:8)])
+annotation_col_urine<- data.frame(type = factor(label_urine$DiseaseType,levels = c("healthy","non_severe","severe")),
+sex=label_urine$sex,age=label_urine$age, row.names = label_urine$ID)
+
+type_color <- c("#80AA31","#D9942C","#8C2826") 
+names(type_color) <- c("healthy","non_severe","severe")
+sex_color <- c("red","#016D06")
+names(sex_color) <- c("F","M")
+
+ann_colors <- list(type=type_color,sex=sex_color)
+colors = c( brewer.pal(11,"RdYlGn")[11:1])
+
+row.names(virusBudding_urine)<-virusBudding_urine$ID
+virusBudding_urine2<-data.frame(t(virusBudding_urine[,-c(1)]))
+virusBudding_urine2[is.na(virusBudding_urine2)]<-0
+row.names(virusBudding_urine2)<-data.frame(str_split_fixed(row.names(virusBudding_urine2),"_",2))[,2]
+pheatmap(virusBudding_urine2,scale="row",color = colors,annotation_col = annotation_col_urine,
+        annotation_colors = ann_colors, fontsize_col = 10, cluster_rows = T, cluster_cols = F,show_rownames =T, show_colnames =F ,fontsize = 10,cellwidth=5,cellheight=10,filename = paste0("serum_urine_review/Figure/virusBudding_urine_103",".pdf"),main = paste0("virusBudding_urine_103"))
+
+
+
+#### virubudding_PRM
+library(stringr)
+
+raw2<-read.csv("MRMhr/analysis/virus_prm_matrix20201027.csv")
+prm_peptide<-read.csv("MRMhr/analysis/virus_peptide.csv")
+raw2$prot<- data.frame(str_split_fixed(raw2$prot,"_",2))[,2]
+raw2.1<-raw2[which(raw2$prot %in% prm_peptide$peptide),-2]
+info<-read.csv("matrix/urine_protein_matrix_20200506.csv")
+info2<-info[,c(1:8)]
+row.names(raw2.1)<-raw2.1$peptide
+raw3<-data.frame(t(raw2.1[,-c(1)]))
+raw3$ID<-row.names(raw3)
+raw4<-merge(info2,raw3, by.x="ID", all=F)
+raw4<-raw4[order(raw4$DiseaseType,decreasing = F),]
+
+
+virusBudding_PRM_urine<-data.frame(raw4[,-c(2:8)])
+
+label_urine<-data.frame(raw4[,c(1:8)])
+annotation_col_urine<- data.frame(type = factor(label_urine$DiseaseType,levels = c("healthy","non_severe","severe")),
+sex=label_urine$sex,age=label_urine$age, row.names = label_urine$ID)
+
+type_color <- c("#80AA31","#D9942C","#8C2826") 
+names(type_color) <- c("healthy","non_severe","severe")
+sex_color <- c("red","#016D06")
+names(sex_color) <- c("F","M")
+
+ann_colors <- list(type=type_color,sex=sex_color)
+colors = c( brewer.pal(11,"RdYlGn")[11:1])
+
+row.names(virusBudding_PRM_urine)<-virusBudding_PRM_urine$ID
+virusBudding_PRM_urine2<-data.frame(t(virusBudding_PRM_urine[,-c(1)]))
+virusBudding_PRM_urine3<-(virusBudding_PRM_urine2)
+virusBudding_PRM_urine3[is.na(virusBudding_PRM_urine3)]<-0
+
+pheatmap(virusBudding_PRM_urine3,scale="row",color = colors,annotation_col = annotation_col_urine,
+        annotation_colors = ann_colors, fontsize_col = 10, cluster_rows = T, cluster_cols = F,show_rownames =T, show_colnames =F ,fontsize = 10,cellwidth=5,cellheight=10,filename = paste0("serum_urine_review/Figure/virusBudding_PRM_urine_103",".pdf"),main = paste0("virusBudding_PRM_urine_103"))
+
+
+
+
+#### unique serum
+unique_serum<-data.frame(serum3[,c(1,which(names(serum3)%in%c(as.matrix(protein$serum.14.proteins))))])
+unique_serum<-data.frame(unique_serum[,c(1,which(names(unique_serum)%in%c(as.matrix(protein$Serum_DEPs))))])
+label_serum<-data.frame(serum2[,c(1:8)])
+annotation_col_serum<- data.frame(type = factor(label_serum$DiseaseType,levels = c("healthy","non_severe","severe")),
+sex=label_serum$sex,age=label_serum$age, row.names = label_serum$ID)
+
+type_color <- c("#80AA31","#D9942C","#8C2826") 
+names(type_color) <- c("healthy","non_severe","severe")
+sex_color <- c("red","#016D06")
+names(sex_color) <- c("F","M")
+
+ann_colors <- list(type=type_color,sex=sex_color)
+colors = c( brewer.pal(11,"RdYlGn")[11:1])
+
+row.names(unique_serum)<-unique_serum$ID
+unique_serum2<-data.frame(t(unique_serum[,-c(1)]))
+unique_serum2[is.na(unique_serum2)]<-0
+row.names(unique_serum2)<-data.frame(str_split_fixed(row.names(unique_serum2),"_",2))[,2]
+pheatmap(unique_serum2,scale="row",color = colors,annotation_col = annotation_col_serum,
+        annotation_colors = ann_colors, fontsize_col = 10, cluster_rows = T, cluster_cols = F,show_rownames =T, show_colnames =F ,fontsize = 10,cellwidth=5,cellheight=10,filename = paste0("serum_urine_review/Figure/unique_serum_103",".pdf"),main = paste0("unique_serum_103"))
+
+
+
+##### metabo five pathway
+
+
+Metabo_pathway_urine<-data.frame(urine_metabO[,c(1,which(names(urine_metabO)%in%c(as.matrix(protein$X5_pathway))))],check.names = F)
+
+metabo_label<-read_excel("matrix/TableS1_20200928.xlsx",sheet = 2)
+
+metabo_label2<-metabo_label[,c(1,13,14)]
+
+names(metabo_label2)<-c("sampleID","sex","age")
+
+metabo_label2$sex<-gsub("M","1",metabo_label2$sex)
+
+metabo_label2$sex<-gsub("F","2",metabo_label2$sex)
+
+
+annotation_col_urine<- data.frame(type = factor(label_urine$DiseaseType,levels = c("healthy","non_severe","severe")),
+sex=label_urine$sex,age=label_urine$age, row.names = label_urine$sampleID)
+
+type_color <- c("#80AA31","#D9942C","#8C2826") 
+names(type_color) <- c("healthy","non_severe","severe")
+sex_color <- c("red","#016D06")
+names(sex_color) <- c("F","M")
+
+ann_colors <- list(type=type_color,sex=sex_color)
+colors = c( brewer.pal(11,"RdYlGn")[11:1])
+
+row.names(Metabo_pathway_urine)<-Metabo_pathway_urine$sampleID
+Metabo_pathway_urine2<-data.frame(t(Metabo_pathway_urine[,-c(1)]),check.names = F)
+Metabo_pathway_urine2[is.na(Metabo_pathway_urine2)]<-0
+
+pheatmap(Metabo_pathway_urine2,scale="row",color = colors,annotation_col = annotation_col_urine,
+        annotation_colors = ann_colors, fontsize_col = 10, cluster_rows = T, cluster_cols = F,show_rownames =T, show_colnames =F ,fontsize = 10,cellwidth=5,cellheight=10,filename = paste0("serum_urine_review/Figure/Metabo_pathway_urine_103",".pdf"),main = paste0("Metabo_pathway_urine_103"))
+
+
+
+
+
+```
